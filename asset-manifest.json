@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/personal-web/static/css/main.e4a28af5.chunk.css",
-    "main.js": "/personal-web/static/js/main.80976391.chunk.js",
-    "main.js.map": "/personal-web/static/js/main.80976391.chunk.js.map",
+    "main.js": "/personal-web/static/js/main.90d2fe7f.chunk.js",
+    "main.js.map": "/personal-web/static/js/main.90d2fe7f.chunk.js.map",
     "runtime-main.js": "/personal-web/static/js/runtime-main.90591538.js",
     "runtime-main.js.map": "/personal-web/static/js/runtime-main.90591538.js.map",
-    "static/js/2.1ddcd7b8.chunk.js": "/personal-web/static/js/2.1ddcd7b8.chunk.js",
-    "static/js/2.1ddcd7b8.chunk.js.map": "/personal-web/static/js/2.1ddcd7b8.chunk.js.map",
+    "static/js/2.aa60ceb5.chunk.js": "/personal-web/static/js/2.aa60ceb5.chunk.js",
+    "static/js/2.aa60ceb5.chunk.js.map": "/personal-web/static/js/2.aa60ceb5.chunk.js.map",
     "index.html": "/personal-web/index.html",
-    "precache-manifest.a5df49b494a1b88b7737fdcf425ffdbf.js": "/personal-web/precache-manifest.a5df49b494a1b88b7737fdcf425ffdbf.js",
+    "precache-manifest.5c349d9120ab0c052aa2c3472e8914f0.js": "/personal-web/precache-manifest.5c349d9120ab0c052aa2c3472e8914f0.js",
     "service-worker.js": "/personal-web/service-worker.js",
     "static/css/main.e4a28af5.chunk.css.map": "/personal-web/static/css/main.e4a28af5.chunk.css.map",
-    "static/js/2.1ddcd7b8.chunk.js.LICENSE.txt": "/personal-web/static/js/2.1ddcd7b8.chunk.js.LICENSE.txt",
+    "static/js/2.aa60ceb5.chunk.js.LICENSE.txt": "/personal-web/static/js/2.aa60ceb5.chunk.js.LICENSE.txt",
     "static/media/1.jpg": "/personal-web/static/media/1.6a41eb1d.jpg",
     "static/media/10.jpg": "/personal-web/static/media/10.cdc7e206.jpg",
     "static/media/11.jpg": "/personal-web/static/media/11.97a58b00.jpg",
@@ -43,12 +43,12 @@
     "static/media/7.jpg": "/personal-web/static/media/7.1238d102.jpg",
     "static/media/8.jpg": "/personal-web/static/media/8.aaa147e1.jpg",
     "static/media/9.jpg": "/personal-web/static/media/9.b765e7a8.jpg",
-    "static/media/Baizhou_Chen_Resume.pdf": "/personal-web/static/media/Baizhou_Chen_Resume.7c1ec634.pdf"
+    "static/media/Baizhou_Chen_Resume.pdf": "/personal-web/static/media/Baizhou_Chen_Resume.61be1683.pdf"
   },
   "entrypoints": [
     "static/js/runtime-main.90591538.js",
-    "static/js/2.1ddcd7b8.chunk.js",
+    "static/js/2.aa60ceb5.chunk.js",
     "static/css/main.e4a28af5.chunk.css",
-    "static/js/main.80976391.chunk.js"
+    "static/js/main.90d2fe7f.chunk.js"
   ]
 }
