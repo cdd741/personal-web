@@ -43,7 +43,7 @@ import { SITE } from '../site.config';
     let shown = '';
     const exposure = createExposure(canvas, {
       ambient: true,
-      background: '#07080c',
+      background: '#070914',
       pointerTarget: frame,
       onTick(seconds) {
         const next = seconds.toFixed(1);
@@ -72,7 +72,7 @@ import { SITE } from '../site.config';
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--night);
-    box-shadow: var(--shadow), 0 0 0 1px var(--frame-ring);
+    box-shadow: var(--frame-shadow), 0 0 0 1px var(--frame-ring);
     isolation: isolate;
     /* Horizontal drags paint; vertical ones still scroll the page on touch screens. */
     touch-action: pan-y pinch-zoom;
@@ -82,7 +82,7 @@ import { SITE } from '../site.config';
   .scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgb(7 8 12 / 0.75), rgb(7 8 12 / 0) 42%);
+    background: linear-gradient(to top, rgb(12 8 20 / 0.7), rgb(12 8 20 / 0) 42%);
     pointer-events: none;
   }
 

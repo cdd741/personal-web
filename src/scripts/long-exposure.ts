@@ -169,9 +169,17 @@ export function createExposure(canvas: HTMLCanvasElement, opts: ExposureOptions 
     g.fillStyle = opts.background!;
     g.fillRect(0, 0, width, height);
 
+    // Blue-hour sky: deep blue overhead, fading through indigo to a plum-tinted street level.
+    const sky = g.createLinearGradient(0, 0, 0, height);
+    sky.addColorStop(0, 'rgb(22 34 84 / 0.55)');
+    sky.addColorStop(0.55, 'rgb(28 20 64 / 0.25)');
+    sky.addColorStop(1, 'rgb(60 22 52 / 0.35)');
+    g.fillStyle = sky;
+    g.fillRect(0, 0, width, height);
+
     const horizon = g.createRadialGradient(width * 0.5, height * 1.15, 0, width * 0.5, height * 1.15, height * 1.1);
-    horizon.addColorStop(0, 'rgb(255 140 60 / 0.10)');
-    horizon.addColorStop(0.5, 'rgb(120 80 160 / 0.05)');
+    horizon.addColorStop(0, 'rgb(255 140 60 / 0.22)');
+    horizon.addColorStop(0.5, 'rgb(150 70 170 / 0.08)');
     horizon.addColorStop(1, 'rgb(0 0 0 / 0)');
     g.fillStyle = horizon;
     g.fillRect(0, 0, width, height);

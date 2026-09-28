@@ -10,7 +10,6 @@ import { SITE } from '../site.config';
 
 const featured = (await getProjects()).filter((p) => p.data.featured).slice(0, 4);
 const posts = (await getPosts()).slice(0, 3);
-const { education: edu } = SITE;
 ---
 
 <Base>
@@ -25,27 +24,24 @@ const { education: edu } = SITE;
 
   <div class="container">
     <section class="intro section">
-      <p>
-        I'm a {SITE.role.toLowerCase()} at <a href={SITE.company.url}>{SITE.company.name}</a>. I studied math at the {edu.school}, graduating in {edu.year} with a minor in {edu.minor.toLowerCase()}.
-      </p>
-      <p class="muted">This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
+      <p>This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
       <ul class="links">
-        <li><a href={SITE.links.github} rel="me">GitHub ↗</a></li>
-        {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me">LinkedIn ↗</a></li>}
-        <li><a href="/about/">More about me →</a></li>
+        <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
+        {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
+        <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
       </ul>
     </section>
 
     <section class="section" aria-labelledby="projects-title">
       <h2 class="section-title" id="projects-title">
-        Selected projects <a href="/projects/">All projects →</a>
+        <span>Selected projects</span> <a href="/projects/">All projects →</a>
       </h2>
       <ProjectList projects={featured} />
     </section>
 
     <section class="section" aria-labelledby="writing-title">
       <h2 class="section-title" id="writing-title">
-        Writing <a href="/writing/">All writing →</a>
+        <span>Writing</span> <a href="/writing/">All writing →</a>
       </h2>
       <PostList posts={posts} />
     </section>
@@ -71,39 +67,60 @@ const { education: edu } = SITE;
   }
 
   .intro p {
-    margin: 0 0 0.9rem;
-  }
-
-  .intro .muted {
-    font-size: var(--step-0);
+    margin: 0;
   }
 
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
+    gap: 0.6rem;
     margin: 1.5rem 0 0;
     padding: 0;
     list-style: none;
-    font-size: var(--step-0);
+    font-size: var(--step--1);
   }
 
+  .links a {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid color-mix(in oklab, var(--c) 35%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--c) 8%, transparent);
+    color: color-mix(in oklab, var(--c) 70%, var(--fg));
+    text-decoration: none;
+    transition:
+      background-color 0.2s,
+      box-shadow 0.2s,
+      transform 0.2s var(--ease-out);
+  }
+
+  .links a:hover {
+    background: color-mix(in oklab, var(--c) 16%, transparent);
+    box-shadow: 0 0 20px -4px color-mix(in oklab, var(--c) 55%, transparent);
+    transform: translateY(-1px);
+  }
+
+  /* Gradient hairline border: the card is lit by the same trail colors as the hero. */
   .play-teaser {
     display: flex;
     align-items: center;
     gap: 1.25rem;
     padding: 1.25rem 1.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: var(--radius);
+    background:
+      linear-gradient(var(--bg-raised), var(--bg-raised)) padding-box,
+      linear-gradient(120deg, var(--c-amber), var(--c-red), var(--c-violet), var(--c-cyan)) border-box;
     text-decoration: none;
     transition:
-      border-color 0.2s,
-      background-color 0.2s;
+      box-shadow 0.25s,
+      transform 0.25s var(--ease-out);
   }
 
   .play-teaser:hover {
-    border-color: var(--border-strong);
-    background: var(--bg-raised);
+    color: inherit;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px -18px color-mix(in oklab, var(--c-violet) 55%, transparent);
   }
 
   .play-teaser > span:not(.arrow) {
@@ -117,6 +134,7 @@ const { education: edu } = SITE;
   }
 
   .play-teaser:hover .rex {
+    color: var(--c-green);
     transform: translateY(-6px);
   }
 

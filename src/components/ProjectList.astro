@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { tagStyle } from '../tag-color';
 
 interface Props {
   projects: CollectionEntry<'projects'>[];
@@ -14,7 +15,7 @@ const { projects } = Astro.props;
       {projects.map(({ data }) => {
         const href = data.url ?? data.repo;
         return (
-          <li>
+          <li style={tagStyle(data.tags[0] ?? data.title)}>
             <div class="row">
               <h3>
                 {href ? <a href={href}>{data.title}</a> : data.title}
@@ -26,7 +27,9 @@ const { projects } = Astro.props;
             {(data.tags.length > 0 || (data.url && data.repo)) && (
               <p class="meta">
                 {data.tags.map((t) => (
-                  <span class="badge">{t}</span>
+                  <span class="badge badge-tag" style={tagStyle(t)}>
+                    {t}
+                  </span>
                 ))}
                 {data.url && data.repo && <a href={data.repo}>source</a>}
               </p>
@@ -84,11 +87,12 @@ const { projects } = Astro.props;
   }
 
   h3 a:hover {
-    color: var(--accent);
+    color: color-mix(in oklab, var(--tag) 85%, var(--fg));
+    text-decoration: none;
   }
 
   h3 a:hover::after {
-    color: var(--accent);
+    color: var(--tag);
   }
 
   .badge {
