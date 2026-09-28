@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Play" description="A tiny endless runner. Jump the cacti, duck the pterodactyls, survive the night.">
+  <div class="container">
+    <header class="page-head">
+      <h1>Play</h1>
+      <p>A tiny runner, for old times' sake. It's a nod to T-Rex Multiplayer, an old project of mine.</p>
+    </header>
+  </div>
+
+  <section class="container-wide stage">
+    <div class="game" data-game>
+      <canvas data-runner role="img" aria-label="Endless runner game. Press space or tap to jump, down arrow to duck."></canvas>
+    </div>
+    <p class="status" data-status aria-live="polite"></p>
+  </section>
+
+  <div class="container">
+    <dl class="controls">
+      <div><dt><kbd>Space</kbd> <kbd>↑</kbd> or tap</dt><dd>Jump. Hold for a higher jump.</dd></div>
+      <div><dt><kbd>↓</kbd></dt><dd>Duck, or drop faster mid-air</dd></div>
+      <div><dt>Every 700 points</dt><dd>Night falls. Watch your tail light.</dd></div>
+    </dl>
+  </div>
+</Base>
+
+<script>
+  import { createRunner } from '../scripts/runner';
+  import { onThemeChange } from '../scripts/theme';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-runner]');
+  const game = document.querySelector<HTMLElement>('[data-game]');
+  const status = document.querySelector<HTMLElement>('[data-status]');
+
+  if (canvas && game && status) {
+    const runner = createRunner(canvas, {
+      onStart: () => (status.textContent = ''),
+      onGameOver: (score, hi, isBest) => {
+        status.textContent = isBest ? `New best: ${score}!` : `Score ${score}. Best ${hi}.`;
+      },
+    });
+
+    onThemeChange(() => {
+      const styles = getComputedStyle(document.documentElement);
+      runner.setColors(styles.getPropertyValue('--fg').trim(), styles.getPropertyValue('--bg').trim());
+    });
+
+    const isJump = (e: KeyboardEvent) => e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW';
+    const isDuck = (e: KeyboardEvent) => e.code === 'ArrowDown' || e.code === 'KeyS';
+    const typing = () => document.activeElement?.matches('input, textarea, [contenteditable]') || document.querySelector('dialog[open]');
+
+    window.addEventListener('keydown', (e) => {
+      if (typing() || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isJump(e)) {
+        e.preventDefault();
+        if (!e.repeat) runner.jump();
+      } else if (isDuck(e)) {
+        e.preventDefault();
+        runner.duck(true);
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (isJump(e)) runner.release();
+      if (isDuck(e)) runner.duck(false);
+    });
+
+    game.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      runner.jump();
+    });
+    window.addEventListener('pointerup', () => runner.release());
+    window.addEventListener('blur', () => {
+      runner.release();
+      runner.duck(false);
+    });
+  }
+</script>
+
+<style>
+  .stage {
+    margin-top: 0.5rem;
+  }
+
+  .game {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+
+  canvas {
+    width: 100%;
+    aspect-ratio: 640 / 180;
+  }
+
+  .status {
+    min-height: 1.5em;
+    margin: 0.75rem 0 0;
+    text-align: center;
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1rem 2rem;
+    margin: 2rem 0 0;
+    font-size: var(--step--1);
+  }
+
+  dt {
+    margin-bottom: 0.25rem;
+    color: var(--fg);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--fg-muted);
+  }
+</style>

@@ -1,0 +1,10 @@
+---
+title: Project name
+description: One or two sentences, shown in the list.
+year: "2024"
+url: https://example.com          # optional, live site
+repo: https://github.com/cdd741/x # optional, source
+tags: [typescript, web]
+featured: true                    # also listed on the home page
+order: 10                         # lower sorts first
+---

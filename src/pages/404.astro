@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import PixelSprite from '../components/PixelSprite.astro';
+import { REX_DEAD } from '../scripts/sprites';
+---
+
+<Base title="Not found" noindex>
+  <div class="container lost">
+    <PixelSprite sprite={REX_DEAD} px={4} class="rex" />
+    <h1>404</h1>
+    <p>This page went out for a long ride and didn't come back.</p>
+    <p class="muted">
+      <a href="/">Head home</a>, or press <kbd data-mod-key>⌘</kbd> <kbd>K</kbd> to find what you were after.
+    </p>
+  </div>
+</Base>
+
+<style>
+  .lost {
+    padding-block: clamp(3rem, 12vw, 8rem);
+    text-align: center;
+  }
+
+  .rex {
+    margin: 0 auto 1.5rem;
+    color: var(--fg);
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: var(--step-3);
+    font-family: var(--font-mono), monospace;
+  }
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+</style>

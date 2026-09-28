@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE, SHOW_DRAFTS } from '../site.config';
+
+const { education: edu } = SITE;
+const elsewhere = [
+  { label: 'GitHub', href: SITE.links.github, handle: SITE.links.github.replace('https://github.com/', '@') },
+  { label: 'LinkedIn', href: SITE.links.linkedin, handle: SITE.links.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com/, '').replace(/\/$/, '') },
+].filter((l) => l.href);
+---
+
+<Base title="About" description={`About ${SITE.name}: ${SITE.role.toLowerCase()} at ${SITE.company.name}.`}>
+  <div class="container">
+    <header class="page-head">
+      <h1>About</h1>
+      <p>{SITE.role} at {SITE.company.name}.</p>
+    </header>
+
+    {
+      SITE.bio.length > 0 ? (
+        <section class="bio">
+          {SITE.bio.map((para) => (
+            <p>{para}</p>
+          ))}
+        </section>
+      ) : (
+        SHOW_DRAFTS && (
+          <p class="empty">
+            <span class="badge badge-draft">draft</span> Bio goes here. Add paragraphs to <code>bio</code> in <code>src/site.config.ts</code>.
+          </p>
+        )
+      )
+    }
+
+    <dl class="facts">
+      <div>
+        <dt>Now</dt>
+        <dd>{SITE.role} at <a href={SITE.company.url}>{SITE.company.name}</a></dd>
+      </div>
+      <div>
+        <dt>Education</dt>
+        <dd>
+          {edu.degree}, {edu.school}, {edu.year}
+          <span class="muted">· minor in {edu.minor}</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Elsewhere</dt>
+        <dd>
+          <ul>
+            {
+              elsewhere.map((l) => (
+                <li>
+                  <a href={l.href} rel="me">
+                    {l.label}
+                  </a>{' '}
+                  <span class="muted mono">{l.handle}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</Base>
+
+<style>
+  .bio {
+    font-size: var(--step-1);
+    line-height: 1.6;
+  }
+
+  .bio p {
+    margin: 0 0 1rem;
+  }
+
+  .facts {
+    display: grid;
+    gap: 0;
+    margin: 2.5rem 0 0;
+  }
+
+  .facts > div {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .facts > div:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  dt {
+    color: var(--fg-faint);
+    font-size: var(--step--1);
+    padding-top: 0.15rem;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  dd ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  dd li + li {
+    margin-top: 0.25rem;
+  }
+
+  dd .mono {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    .facts > div {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+</style>

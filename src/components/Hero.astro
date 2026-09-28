@@ -1,0 +1,189 @@
+---
+import { SITE } from '../site.config';
+---
+
+<section class="hero container-wide" aria-labelledby="hero-title">
+  <div class="frame" data-exposure-frame>
+    <canvas
+      data-exposure
+      role="img"
+      aria-label="A night scene: cyclists' lights streak past in a long exposure. Move your pointer over it to paint with light."
+    ></canvas>
+    <div class="scrim" aria-hidden="true"></div>
+    <div class="copy">
+      <h1 id="hero-title">Hi, I'm Andre.</h1>
+      <p>
+        {SITE.role} at <a href={SITE.company.url}>{SITE.company.name}</a>.
+      </p>
+    </div>
+    <p class="hint" data-hint aria-hidden="true">
+      <span class="hint-mouse">Move your cursor to paint with light</span>
+      <span class="hint-touch">Drag sideways to paint with light</span>
+    </p>
+  </div>
+  <div class="exif mono">
+    <span>ƒ/8</span>
+    <span>ISO 100</span>
+    <span><span data-exposure-time>0.0</span>s</span>
+    <span class="exif-actions">
+      <button type="button" data-exposure-reset>New exposure</button>
+      <button type="button" data-exposure-save>Save photo</button>
+    </span>
+  </div>
+</section>
+
+<script>
+  import { createExposure } from '../scripts/long-exposure';
+
+  const frame = document.querySelector<HTMLElement>('[data-exposure-frame]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-exposure]');
+  if (frame && canvas) {
+    const time = document.querySelector<HTMLElement>('[data-exposure-time]')!;
+    const hint = document.querySelector<HTMLElement>('[data-hint]')!;
+    let shown = '';
+    const exposure = createExposure(canvas, {
+      ambient: true,
+      background: '#07080c',
+      pointerTarget: frame,
+      onTick(seconds) {
+        const next = seconds.toFixed(1);
+        if (next !== shown) time.textContent = shown = next;
+      },
+      onFirstPaint() {
+        hint.classList.add('done');
+      },
+    });
+    document.querySelector('[data-exposure-reset]')?.addEventListener('click', () => {
+      exposure.reset();
+      time.textContent = shown = '0.0';
+    });
+    document.querySelector('[data-exposure-save]')?.addEventListener('click', () => exposure.save('andre-chen-long-exposure.png'));
+  }
+</script>
+
+<style>
+  .hero {
+    padding-top: clamp(0.5rem, 2vw, 1.5rem);
+  }
+
+  .frame {
+    position: relative;
+    height: clamp(24rem, 62vh, 36rem);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--night);
+    box-shadow: var(--shadow), 0 0 0 1px var(--frame-ring);
+    isolation: isolate;
+    /* Horizontal drags paint; vertical ones still scroll the page on touch screens. */
+    touch-action: pan-y pinch-zoom;
+    cursor: crosshair;
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(7 8 12 / 0.75), rgb(7 8 12 / 0) 42%);
+    pointer-events: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .copy {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 3rem);
+    bottom: clamp(1.25rem, 4vw, 2.75rem);
+    right: 1.25rem;
+    color: #f4f2ee;
+    pointer-events: none;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.5);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 1.5rem + 5vw, 4.75rem);
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+
+  .copy p {
+    margin: 0.75rem 0 0;
+    font-size: var(--step-1);
+    color: rgb(244 242 238 / 0.72);
+  }
+
+  .copy a {
+    pointer-events: auto;
+    color: inherit;
+    text-decoration-color: rgb(255 255 255 / 0.35);
+  }
+
+  .copy a:hover {
+    color: #fff;
+    text-decoration-color: var(--accent);
+  }
+
+  .hint {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.25rem;
+    margin: 0;
+    font-size: var(--step--1);
+    color: rgb(244 242 238 / 0.5);
+    pointer-events: none;
+    transition: opacity 1.2s var(--ease-out);
+  }
+
+  .hint.done {
+    opacity: 0;
+  }
+
+  .hint-touch {
+    display: none;
+  }
+
+  @media (hover: none) {
+    .hint-mouse {
+      display: none;
+    }
+
+    .hint-touch {
+      display: inline;
+    }
+  }
+
+  .exif {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1.25rem;
+    padding: 0.75rem 0.25rem 0;
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .exif-actions {
+    display: flex;
+    gap: 1rem;
+    margin-left: auto;
+  }
+
+  .exif button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fg-muted);
+    font-size: inherit;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .exif button:hover {
+    color: var(--accent);
+  }
+</style>

@@ -1,0 +1,68 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  # Deploys only once the repo's Pages source is set to "GitHub Actions"
+  # (Settings → Pages). Until then the live site keeps being served from the
+  # gh-pages branch and this job just reports that it skipped.
+  pages-source:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    outputs:
+      actions: ${{ steps.check.outputs.actions }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          build_type=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type 2>/dev/null || echo unknown)
+          echo "Pages build type: ${build_type}"
+          if [ "$build_type" = "workflow" ]; then
+            echo "actions=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "actions=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::Pages is not set to deploy from GitHub Actions (build type: ${build_type}). The live site was left untouched."
+          fi
+
+  deploy:
+    needs: [build, pages-source]
+    if: needs.pages-source.outputs.actions == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

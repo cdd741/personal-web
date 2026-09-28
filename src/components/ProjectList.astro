@@ -1,0 +1,120 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { projects } = Astro.props;
+---
+
+{
+  projects.length ? (
+    <ul class="projects">
+      {projects.map(({ data }) => {
+        const href = data.url ?? data.repo;
+        return (
+          <li>
+            <div class="row">
+              <h3>
+                {href ? <a href={href}>{data.title}</a> : data.title}
+                {data.draft && <span class="badge badge-draft">draft</span>}
+              </h3>
+              <span class="year mono">{data.year}</span>
+            </div>
+            <p>{data.description}</p>
+            {(data.tags.length > 0 || (data.url && data.repo)) && (
+              <p class="meta">
+                {data.tags.map((t) => (
+                  <span class="badge">{t}</span>
+                ))}
+                {data.url && data.repo && <a href={data.repo}>source</a>}
+              </p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  ) : (
+    <p class="empty">Projects are being dusted off. Check back soon.</p>
+  )
+}
+
+<style>
+  .projects {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li:first-child {
+    border-top: 1px solid var(--border);
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h3 a {
+    text-decoration: none;
+  }
+
+  h3 a::after {
+    content: ' ↗';
+    color: var(--fg-faint);
+    font-weight: 400;
+    transition: color 0.15s;
+  }
+
+  h3 a:hover {
+    color: var(--accent);
+  }
+
+  h3 a:hover::after {
+    color: var(--accent);
+  }
+
+  .badge {
+    margin-left: 0.4rem;
+  }
+
+  .meta .badge {
+    margin: 0 0.35rem 0 0;
+  }
+
+  .year {
+    color: var(--fg-faint);
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0.3rem 0 0;
+    color: var(--fg-muted);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.6rem;
+    font-size: 0.8rem;
+  }
+</style>

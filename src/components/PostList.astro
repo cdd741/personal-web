@@ -1,0 +1,72 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+  posts: CollectionEntry<'writing'>[];
+}
+
+const { posts } = Astro.props;
+---
+
+{
+  posts.length ? (
+    <ul class="posts">
+      {posts.map((post) => (
+        <li>
+          <a href={`/writing/${post.id}/`}>
+            <span class="title">
+              {post.data.title}
+              {post.data.draft && <span class="badge badge-draft">draft</span>}
+            </span>
+            <span class="date mono">
+              <FormattedDate date={post.data.pubDate} />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="empty">Nothing published yet. The first post is on its way.</p>
+  )
+}
+
+<style>
+  .posts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+  }
+
+  li:first-child a {
+    border-top: 1px solid var(--border);
+  }
+
+  .title {
+    flex: 1;
+    transition: color 0.15s;
+  }
+
+  a:hover .title {
+    color: var(--accent);
+  }
+
+  .date {
+    color: var(--fg-faint);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .badge {
+    margin-left: 0.5rem;
+  }
+</style>

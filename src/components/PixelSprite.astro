@@ -1,0 +1,28 @@
+---
+import type { Sprite } from '../scripts/sprites';
+
+interface Props {
+  sprite: Sprite;
+  /** Rendered size of one sprite pixel, in CSS px. */
+  px?: number;
+  class?: string;
+}
+
+const { sprite, px = 3, class: className } = Astro.props;
+const runs: { x: number; y: number; w: number }[] = [];
+sprite.forEach((row, y) => {
+  for (const m of row.matchAll(/X+/g)) runs.push({ x: m.index, y, w: m[0].length });
+});
+---
+
+<svg
+  class={className}
+  width={sprite[0].length * px}
+  height={sprite.length * px}
+  viewBox={`0 0 ${sprite[0].length} ${sprite.length}`}
+  fill="currentColor"
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+>
+  {runs.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" />)}
+</svg>

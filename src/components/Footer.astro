@@ -1,0 +1,90 @@
+---
+import { SITE } from '../site.config';
+
+const year = new Date().getFullYear();
+const links = [
+  { href: SITE.links.github, label: 'GitHub' },
+  { href: SITE.links.linkedin, label: 'LinkedIn' },
+  { href: '/rss.xml', label: 'RSS' },
+].filter((l) => l.href);
+---
+
+<footer class="site-footer container-wide">
+  <p>© {year} {SITE.name}</p>
+  <ul>
+    {
+      links.map(({ href, label }) => (
+        <li>
+          <a href={href} rel={href.startsWith('http') ? 'me noopener' : undefined}>
+            {label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="hint">
+    <span class="keys">Press <kbd data-mod-key>⌘</kbd> <kbd>K</kbd>, some commands are hidden.</span>
+    <button type="button" class="touch-open" data-cmdk-open>Open command menu</button>
+  </p>
+</footer>
+
+<style>
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    margin-top: 5rem;
+    padding-block: 2rem 2.5rem;
+    border-top: 1px solid var(--border);
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--fg);
+  }
+
+  .hint {
+    margin-left: auto;
+    color: var(--fg-faint);
+  }
+
+  .touch-open {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fg-muted);
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+
+  @media (hover: none) {
+    .keys {
+      display: none;
+    }
+
+    .touch-open {
+      display: inline;
+    }
+  }
+</style>

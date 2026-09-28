@@ -1,0 +1,278 @@
+---
+import { getPosts } from '../lib';
+import { NAV, SITE } from '../site.config';
+
+const posts = await getPosts();
+
+/** Static part of the command list; behaviours are attached in the client script by `action`. */
+const items = [
+  { group: 'Go to', label: 'Home', href: '/', keywords: 'index start' },
+  ...NAV.map(({ href, label }) => ({ group: 'Go to', label, href, keywords: label === 'Play' ? 'game dino rex' : '' })),
+  ...posts.map((p) => ({ group: 'Writing', label: p.data.title, href: `/writing/${p.id}/`, keywords: p.data.tags.join(' ') })),
+  { group: 'Links', label: 'GitHub', href: SITE.links.github, keywords: 'code source repos' },
+  ...(SITE.links.linkedin ? [{ group: 'Links', label: 'LinkedIn', href: SITE.links.linkedin, keywords: 'cv resume work' }] : []),
+  { group: 'Links', label: 'RSS feed', href: '/rss.xml', keywords: 'subscribe feed' },
+  { group: 'Links', label: 'View this site’s source', href: 'https://github.com/cdd741/personal-web', keywords: 'code astro' },
+  { group: 'Preferences', label: 'Toggle dark mode', action: 'theme-toggle', keywords: 'theme light dark night' },
+  { group: 'Preferences', label: 'Use system theme', action: 'theme-system', keywords: 'auto os' },
+  { group: 'Actions', label: 'Copy link to this page', action: 'copy-link', keywords: 'share url' },
+];
+---
+
+<dialog class="cmdk" data-cmdk aria-label="Command palette">
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m20 20-3.5-3.5"></path>
+    </svg>
+    <input
+      type="text"
+      data-cmdk-input
+      role="combobox"
+      aria-expanded="true"
+      aria-controls="cmdk-list"
+      aria-autocomplete="list"
+      aria-label="Search pages and commands"
+      placeholder="Where to? Try a page, a post, or a command…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <kbd>esc</kbd>
+  </div>
+  <ul id="cmdk-list" role="listbox" data-cmdk-list aria-label="Results"></ul>
+  <p class="foot">
+    <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+    <span><kbd>↵</kbd> open</span>
+    <span class="psst">psst: not every command is listed</span>
+  </p>
+</dialog>
+
+<script is:inline type="application/json" data-cmdk-items set:html={JSON.stringify(items).replaceAll("<", "\\u003c")} />
+
+<script>
+  import { initPalette } from '../scripts/palette';
+  import { greetDevelopers, listenForKonami } from '../scripts/eggs';
+
+  initPalette();
+  listenForKonami();
+  greetDevelopers();
+</script>
+
+<style>
+  .cmdk {
+    width: min(100% - 2rem, 36rem);
+    max-height: min(70vh, 32rem);
+    margin: 12vh auto auto;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    color: var(--fg);
+    box-shadow: 0 24px 80px rgb(0 0 0 / 0.25);
+    overflow: hidden;
+  }
+
+  .cmdk[open] {
+    display: flex;
+    flex-direction: column;
+    animation: pop 0.18s var(--ease-out);
+  }
+
+  .cmdk::backdrop {
+    background: rgb(8 8 12 / 0.35);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+  }
+
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-faint);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: var(--fg);
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  input::placeholder {
+    color: var(--fg-faint);
+  }
+
+  ul {
+    flex: 1;
+    margin: 0;
+    padding: 0.4rem;
+    overflow-y: auto;
+    list-style: none;
+    overscroll-behavior: contain;
+  }
+
+  ul :global(.group) {
+    padding: 0.6rem 0.65rem 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+  }
+
+  ul :global([role='option']) {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  ul :global([role='option'][aria-selected='true']) {
+    background: var(--accent-soft);
+  }
+
+  ul :global([role='option'] .meta) {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+  }
+
+  ul :global([role='option'].secret) {
+    color: var(--accent);
+  }
+
+  ul :global(.none) {
+    padding: 1.5rem 0.65rem;
+    text-align: center;
+    color: var(--fg-muted);
+    font-size: 0.95rem;
+  }
+
+  .foot {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+  }
+
+  .foot kbd {
+    margin-right: 0.2rem;
+  }
+
+  .psst {
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  @media (max-width: 480px) {
+    .foot > span:not(.psst) {
+      display: none;
+    }
+  }
+
+  /* ---- easter-egg and toast styles live here so every page has them ---- */
+  :global(.toast-region) {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    z-index: 60;
+    display: grid;
+    gap: 0.5rem;
+    justify-items: center;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  :global(.toast) {
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 0.9rem;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 0.25s var(--ease-out),
+      transform 0.25s var(--ease-out);
+  }
+
+  :global(.toast.in) {
+    opacity: 1;
+    transform: none;
+  }
+
+  :global(.rex-cameo) {
+    position: fixed;
+    left: 0;
+    bottom: 0.5rem;
+    z-index: 55;
+    pointer-events: none;
+  }
+
+  :global(.lights-out) {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgb(4 5 8 / 0.93);
+    opacity: 0;
+    transition: opacity 0.4s var(--ease-out);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  :global(.lights-out.in) {
+    opacity: 1;
+  }
+
+  :global(.lights-out canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  :global(.lights-out p) {
+    position: absolute;
+    left: 50%;
+    bottom: 1.5rem;
+    margin: 0;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 0.875rem;
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  :global(.lights-out button) {
+    margin-left: 0.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid rgb(255 255 255 / 0.25);
+    border-radius: 999px;
+    background: none;
+    color: rgb(255 255 255 / 0.85);
+    cursor: pointer;
+  }
+</style>
