@@ -262,6 +262,10 @@ button {
   font-size: 1.0625rem;
 }
 
+.prose :where(p, ul, ol, blockquote, pre, figure) {
+  margin-block: 0;
+}
+
 .prose > * + * {
   margin-top: 1.25em;
 }
@@ -278,14 +282,6 @@ button {
 
 .prose :is(h2, h3) + * {
   margin-top: 0.6em;
-}
-
-.prose p,
-.prose ul,
-.prose ol,
-.prose blockquote,
-.prose pre {
-  margin-block: 0;
 }
 
 .prose li + li {

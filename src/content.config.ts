@@ -11,6 +11,8 @@ const writing = defineCollection({
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    /** Dummy content that still needs replacing; listed by `npm run placeholders`. */
+    placeholder: z.boolean().default(false),
   }),
 });
 
@@ -29,6 +31,8 @@ const projects = defineCollection({
     /** Lower sorts first. */
     order: z.number().default(100),
     draft: z.boolean().default(false),
+    /** Dummy content that still needs replacing; listed by `npm run placeholders`. */
+    placeholder: z.boolean().default(false),
   }),
 });
 

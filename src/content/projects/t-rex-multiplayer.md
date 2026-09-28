@@ -1,9 +1,10 @@
 ---
+# PLACEHOLDER: description and year are dummy data.
 title: T-Rex Multiplayer
-description: "TODO(andre): one or two sentences on what it was and what you built."
-year: "TODO"
-tags: [game]
+description: A multiplayer take on the offline dinosaur game, with players racing the same course in real time.
+year: "2019"
+tags: [game, websockets, javascript]
 featured: true
 order: 1
-draft: true
+placeholder: true
 ---

@@ -22,6 +22,11 @@ Posts and projects with `draft: true` show up in `npm run dev` only. To
 preview a production build with drafts, run `SHOW_DRAFTS=true npm run build`.
 Drafts never appear in the RSS feed.
 
+Dummy content is marked `placeholder: true` in frontmatter (or `PLACEHOLDER` in
+`src/site.config.ts`). Unlike drafts it is published, so the site looks
+complete while real content is pending. `npm run build` ends with a list of
+what's left; `npm run placeholders -- --strict` fails if anything remains.
+
 ## What's where
 
 - `src/scripts/long-exposure.ts`: the home page hero. Cursor and cyclists paint

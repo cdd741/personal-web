@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/placeholders.mjs",
     "preview": "astro preview",
     "check": "astro check",
-    "astro": "astro"
+    "astro": "astro",
+    "placeholders": "node scripts/placeholders.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
