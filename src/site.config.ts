@@ -12,7 +12,6 @@ export const SITE = {
     degree: 'BMath',
     school: 'University of Waterloo',
     year: 2020,
-    minor: 'Computer Science',
   },
   /**
    * Longer bio for /about, one string per paragraph.
@@ -20,7 +19,7 @@ export const SITE = {
    */
   bio: [
     "I'm a software engineer at Alan, where I build products that try to make health insurance feel a little less like paperwork.",
-    'I studied math at the University of Waterloo and picked up a computer science minor along the way, mostly because I kept sneaking into CS courses anyway.',
+    'I studied math at the University of Waterloo, graduating in 2020.',
     "Outside of work I take photos (long exposures of city lights, mainly), tinker with small games, and occasionally write things down here.",
   ] as string[],
   links: {
