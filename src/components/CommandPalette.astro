@@ -11,6 +11,7 @@ const items = [
   ...posts.map((p) => ({ group: 'Writing', label: p.data.title, href: `/writing/${p.id}/`, keywords: p.data.tags.join(' ') })),
   { group: 'Links', label: 'GitHub', href: SITE.links.github, keywords: 'code source repos' },
   ...(SITE.links.linkedin ? [{ group: 'Links', label: 'LinkedIn', href: SITE.links.linkedin, keywords: 'cv resume work' }] : []),
+  { group: 'Links', label: 'Download résumé (PDF)', href: '/andre-chen-resume.pdf', keywords: 'cv resume pdf' },
   { group: 'Links', label: 'RSS feed', href: '/rss.xml', keywords: 'subscribe feed' },
   { group: 'Links', label: 'View this site’s source', href: 'https://github.com/cdd741/personal-web', keywords: 'code astro' },
   { group: 'Preferences', label: 'Toggle dark mode', action: 'theme-toggle', keywords: 'theme light dark night' },

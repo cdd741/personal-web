@@ -452,3 +452,26 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- print ---------- */
+@media print {
+  .site-header,
+  .site-footer,
+  .skip,
+  .cmdk,
+  .toast-region {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  main {
+    padding: 0;
+  }
+}

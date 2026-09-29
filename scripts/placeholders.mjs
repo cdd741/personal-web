@@ -14,8 +14,10 @@ for (const dir of ['src/content/projects', 'src/content/writing']) {
   }
 }
 
-const config = readFileSync('src/site.config.ts', 'utf8');
-if (config.includes('PLACEHOLDER')) found.push('src/site.config.ts (bio)');
+for (const file of ['src/site.config.ts', 'src/resume.ts']) {
+  const count = readFileSync(file, 'utf8').match(/PLACEHOLDER/g)?.length ?? 0;
+  if (count) found.push(`${file} (${count} section${count > 1 ? 's' : ''})`);
+}
 
 if (found.length) {
   console.warn(`\n⚠ ${found.length} placeholder(s) still contain dummy content:`);

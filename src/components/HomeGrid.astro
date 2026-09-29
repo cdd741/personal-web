@@ -1,0 +1,520 @@
+---
+import FormattedDate from './FormattedDate.astro';
+import PixelSprite from './PixelSprite.astro';
+import { getPosts, getProjects } from '../lib';
+import { REX_STAND } from '../scripts/sprites';
+import { SITE } from '../site.config';
+import { tagStyle } from '../tag-color';
+
+const [latest] = await getPosts();
+const projects = await getProjects();
+const projectTags = [...new Set(projects.flatMap((p) => p.data.tags))].slice(0, 8);
+const { location, now } = SITE;
+
+/** Slider position (0–100) ↔ circle count, on a log scale so small counts get room. */
+const DEFAULT_SLIDER = 72;
+---
+
+<section class="grid container-wide" aria-label="Highlights">
+  <!-- Signature drawn by a Fourier series -->
+  <article class="card sig" style="--c: var(--c-amber)">
+    <canvas data-fourier role="img" aria-label="Andre's signature, traced by a chain of spinning circles (a Fourier series)."></canvas>
+    <div class="sig-top">
+      <p class="kicker">Signed, by Fourier</p>
+      <p class="sig-note">Every circle spins at a fixed speed. Chained together, their tip writes my name.</p>
+    </div>
+    <label class="slider">
+      <span class="mono"><output data-terms-out>…</output> circles</span>
+      <input type="range" min="0" max="100" step="1" value={DEFAULT_SLIDER} data-terms aria-label="Number of circles" />
+    </label>
+  </article>
+
+  <!-- Local time, under the real sky -->
+  <article
+    class="card clock"
+    data-clock
+    data-city={location.city}
+    data-tz={location.timeZone}
+    data-lat={location.lat}
+    data-lon={location.lon}
+    style="--c: var(--c-cyan)"
+  >
+    <span class="celestial" data-body data-kind="sun" aria-hidden="true"></span>
+    <p class="kicker">Local time</p>
+    <p class="time mono" data-time>--:--</p>
+    <p class="clock-label" data-sky-label>{location.city}</p>
+    <p class="clock-offset" data-offset></p>
+  </article>
+
+  <!-- Now -->
+  <article class="card now" style="--c: var(--c-green)">
+    <p class="kicker">Now</p>
+    <dl>
+      {
+        now.items.map(({ label, text }) => (
+          <div>
+            <dt>{label}</dt>
+            <dd>{text}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="card-foot">Updated {now.updated}</p>
+  </article>
+
+  <!-- Play -->
+  <a class="card play" href="/play/" style="--c: var(--c-violet)">
+    <p class="kicker">Play</p>
+    <div class="play-scene" aria-hidden="true">
+      <PixelSprite sprite={REX_STAND} px={2.5} class="rex" />
+      <span class="ground"></span>
+    </div>
+    <p class="play-score mono" data-best>Outrun the cacti →</p>
+  </a>
+
+  <!-- Latest writing -->
+  {
+    latest && (
+      <a class="card post" href={`/writing/${latest.id}/`} style={tagStyle(latest.data.tags[0] ?? latest.data.title).replace('--tag', '--c')}>
+        <p class="kicker">Latest writing</p>
+        <h3>{latest.data.title}</h3>
+        <p class="muted">{latest.data.description}</p>
+        <p class="card-foot mono">
+          <FormattedDate date={latest.data.pubDate} /> · read →
+        </p>
+      </a>
+    )
+  }
+
+  <!-- Résumé -->
+  <div class="card resume" style="--c: var(--c-red)">
+    <p class="kicker">Résumé</p>
+    <p class="resume-line">One page, always up to date.</p>
+    <p class="resume-actions">
+      <a class="stretch" href="/resume/">View</a>
+      <a class="pill" href="/andre-chen-resume.pdf" download>PDF ↓</a>
+    </p>
+  </div>
+
+  <!-- Projects -->
+  <a class="card projects" href="/projects/" style="--c: var(--c-pink)">
+    <p class="kicker">Projects</p>
+    <p class="count"><span>{projects.length}</span> things I've built →</p>
+    <p class="dots" aria-hidden="true">
+      {projectTags.map((t) => <span style={tagStyle(t)} title={t} />)}
+    </p>
+  </a>
+</section>
+
+<script>
+  import { createFourier, type SignatureData } from '../scripts/fourier';
+  import { mountSkyClock } from '../scripts/sky-clock';
+  import signature from '../data/signature.json';
+
+  // Signature card.
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-fourier]');
+  const slider = document.querySelector<HTMLInputElement>('[data-terms]');
+  const out = document.querySelector<HTMLOutputElement>('[data-terms-out]');
+  if (canvas && slider && out) {
+    const drawing = createFourier(canvas, signature as unknown as SignatureData);
+    const toTerms = (v: number) => Math.round(2 * Math.pow(drawing.maxTerms / 2, v / 100));
+    const apply = () => {
+      const n = toTerms(Number(slider.value));
+      out.textContent = String(n);
+      drawing.setTerms(n);
+    };
+    slider.addEventListener('input', apply);
+    apply();
+  }
+
+  // Clock card.
+  const clock = document.querySelector<HTMLElement>('[data-clock]');
+  if (clock) {
+    const { city = '', tz = 'UTC', lat = '0', lon = '0' } = clock.dataset;
+    mountSkyClock(clock, { city, timeZone: tz, lat: Number(lat), lon: Number(lon) });
+  }
+
+  // Play card: show the visitor's best score from /play, if they have one.
+  const best = document.querySelector<HTMLElement>('[data-best]');
+  try {
+    const hi = Number(localStorage.getItem('rex-hi')) || 0;
+    if (best && hi > 0) best.textContent = `Your best: ${String(hi).padStart(5, '0')}`;
+  } catch {}
+</script>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas:
+      'sig sig clock now'
+      'sig sig play now'
+      'post post resume projects';
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  .sig {
+    grid-area: sig;
+  }
+  .clock {
+    grid-area: clock;
+  }
+  .now {
+    grid-area: now;
+  }
+  .play {
+    grid-area: play;
+  }
+  .post {
+    grid-area: post;
+  }
+  .resume {
+    grid-area: resume;
+  }
+  .projects {
+    grid-area: projects;
+  }
+
+  /* ---------- card shell ---------- */
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 1.2rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    isolation: isolate;
+    transition:
+      transform 0.25s var(--ease-out),
+      box-shadow 0.25s,
+      border-color 0.25s;
+  }
+
+  a.card:hover,
+  .card:has(.stretch:hover) {
+    color: inherit;
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--c) 45%, var(--border));
+    box-shadow: 0 18px 40px -20px color-mix(in oklab, var(--c) 60%, transparent);
+  }
+
+  .card p {
+    margin: 0;
+  }
+
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+  }
+
+  .kicker::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 60%, transparent);
+  }
+
+  .card-foot {
+    margin-top: auto !important;
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+  }
+
+  /* ---------- signature ---------- */
+  .sig {
+    min-height: 22rem;
+    padding: 0;
+    border-color: transparent;
+    background:
+      radial-gradient(120% 80% at 50% 110%, rgb(120 60 140 / 0.35), transparent 60%),
+      linear-gradient(#0b1026, #120c22);
+    color: #eeebe6;
+  }
+
+  .sig canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+
+  .sig-top {
+    padding: 1.2rem 1.25rem 0;
+  }
+
+  .sig .kicker {
+    color: rgb(238 235 230 / 0.6);
+  }
+
+  .sig-note {
+    max-width: 22rem;
+    margin-top: 0.35rem !important;
+    font-size: 0.8rem;
+    color: rgb(238 235 230 / 0.5);
+  }
+
+  .slider {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: auto;
+    padding: 0 1.25rem 1.1rem;
+    font-size: 0.75rem;
+    color: rgb(238 235 230 / 0.65);
+  }
+
+  .slider span {
+    min-width: 6.5em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slider input {
+    flex: 1;
+    accent-color: var(--c-amber);
+  }
+
+  /* ---------- clock ---------- */
+  .clock {
+    border-color: transparent;
+    background: linear-gradient(var(--sky-top, #12204f), var(--sky-bottom, #6a4a8c));
+    color: var(--sky-ink, #f3eaff);
+    transition: background 2s;
+    min-height: 10.5rem;
+  }
+
+  .clock .kicker {
+    color: color-mix(in oklab, var(--sky-ink, #fff) 65%, transparent);
+  }
+
+  .time {
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-top: 0.25rem !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock-label {
+    font-size: 0.85rem;
+  }
+
+  .clock-offset {
+    margin-top: auto !important;
+    font-size: 0.72rem;
+    opacity: 0.7;
+  }
+
+  .celestial {
+    position: absolute;
+    left: 78%;
+    top: 22%;
+    z-index: -1;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition:
+      left 2s,
+      top 2s;
+  }
+
+  .celestial[data-kind='sun'] {
+    background: radial-gradient(circle, #fff6d6, #ffc766 60%, #ff9a3d);
+    box-shadow: 0 0 30px 10px rgb(255 190 90 / 0.45);
+  }
+
+  .celestial[data-kind='moon'] {
+    width: 22px;
+    height: 22px;
+    background: #f1ecdf;
+    box-shadow:
+      inset -7px -3px 0 0 #c9c1ad,
+      0 0 24px 4px rgb(230 225 255 / 0.3);
+  }
+
+  /* ---------- now ---------- */
+  .now dl {
+    display: grid;
+    gap: 0.8rem;
+    margin: 0.4rem 0 0.8rem;
+  }
+
+  .now dt {
+    font-size: 0.72rem;
+    color: color-mix(in oklab, var(--c) 75%, var(--fg));
+    font-weight: 500;
+  }
+
+  .now dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  /* ---------- play ---------- */
+  .play-scene {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    height: 3.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .rex {
+    position: relative;
+    z-index: 1;
+    margin-left: 0.25rem;
+    color: var(--fg);
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .play:hover .rex {
+    transform: translateY(-18px);
+  }
+
+  .ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--fg);
+    opacity: 0.8;
+  }
+
+  .play-score {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+  }
+
+  /* ---------- latest post ---------- */
+  .post h3 {
+    margin: 0.2rem 0 0;
+    font-size: var(--step-1);
+    letter-spacing: -0.015em;
+  }
+
+  .post .muted {
+    font-size: 0.9rem;
+  }
+
+  .post .card-foot {
+    padding-top: 0.6rem;
+  }
+
+  /* ---------- résumé ---------- */
+  .resume-line {
+    font-size: 0.95rem;
+  }
+
+  .resume-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: auto !important;
+    font-size: 0.85rem;
+  }
+
+  .stretch {
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  /* The whole card opens the résumé; the PDF pill sits above that link. */
+  .stretch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .stretch::before {
+    content: '→ ';
+  }
+
+  .pill {
+    position: relative;
+    z-index: 1;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--c) 12%, transparent);
+    color: color-mix(in oklab, var(--c) 80%, var(--fg));
+    text-decoration: none;
+  }
+
+  .pill:hover {
+    background: color-mix(in oklab, var(--c) 22%, transparent);
+  }
+
+  /* ---------- projects ---------- */
+  .count {
+    font-size: 0.95rem;
+  }
+
+  .count span {
+    display: block;
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: color-mix(in oklab, var(--c) 80%, var(--fg));
+  }
+
+  .dots {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: auto !important;
+  }
+
+  .dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tag);
+    box-shadow: 0 0 6px color-mix(in oklab, var(--tag) 60%, transparent);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 880px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas:
+        'sig sig'
+        'clock play'
+        'now now'
+        'post post'
+        'resume projects';
+    }
+
+    .sig {
+      min-height: 18rem;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'sig' 'clock' 'now' 'post' 'play' 'resume' 'projects';
+    }
+
+    .sig {
+      min-height: 19rem;
+    }
+  }
+</style>
