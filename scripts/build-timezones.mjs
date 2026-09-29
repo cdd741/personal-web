@@ -1,7 +1,8 @@
 // Generates src/data/timezones.json: approximate coordinates for every IANA time zone
 // (from the tz database's representative city), so the home page can show the sky
 // where the visitor is from their time zone alone, with no location prompt.
-// Run after upgrading moment-timezone: node scripts/build-timezones.mjs
+// Run when the tz database changes (moment-timezone is only needed here, so it isn't a project
+// dependency): npm i --no-save moment-timezone && node scripts/build-timezones.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 

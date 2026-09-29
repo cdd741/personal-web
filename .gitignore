@@ -14,3 +14,6 @@ npm-debug.log*
 
 # macOS
 .DS_Store
+
+# fetched at build time by scripts/fetch-contributions.mjs
+src/data/contributions.json

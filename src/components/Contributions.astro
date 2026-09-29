@@ -1,0 +1,566 @@
+---
+/**
+ * GitHub contribution heatmap for the last year, rendered to SVG at build time.
+ * Data comes from src/data/contributions.json (see scripts/fetch-contributions.mjs).
+ */
+import data from '../data/contributions.json';
+
+type Day = { date: string; count: number; level: number; col: number; row: number };
+
+const DAY_MS = 86400000;
+const CELL = 11;
+const PITCH = 14; // 11px cell + 3px surface gap
+const LEFT = 30;
+const TOP = 18;
+
+const raw = (data.days ?? []) as [string, number, number][];
+const available = data.source !== 'unavailable' && raw.length > 0;
+
+const utc = (date: string) => Date.parse(`${date}T00:00:00Z`);
+const firstSunday = raw.length ? utc(raw[0][0]) - new Date(utc(raw[0][0])).getUTCDay() * DAY_MS : 0;
+const days: Day[] = raw.map(([date, count, level]) => {
+  const t = utc(date);
+  return { date, count, level, col: Math.floor((t - firstSunday) / DAY_MS / 7), row: new Date(t).getUTCDay() };
+});
+const cols = days.length ? days.at(-1)!.col + 1 : 0;
+const width = LEFT + cols * PITCH;
+const height = TOP + 7 * PITCH;
+
+// Month labels at the first column whose Sunday falls in a new month, spaced so they never collide.
+const monthFmt = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' });
+const months: { x: number; label: string }[] = [];
+let lastMonth = -1;
+let lastCol = -10;
+for (const d of days) {
+  if (d.row !== 0 && d !== days[0]) continue;
+  const m = new Date(utc(d.date)).getUTCMonth();
+  if (m !== lastMonth && d.col - lastCol >= 3) {
+    months.push({ x: LEFT + d.col * PITCH, label: monthFmt.format(utc(d.date)) });
+    lastCol = d.col;
+  }
+  lastMonth = m;
+}
+
+// Stats.
+const total = data.total ?? 0;
+const activeDays = days.filter((d) => d.count > 0).length;
+let longest = 0;
+let run = 0;
+for (const d of days) {
+  run = d.count > 0 ? run + 1 : 0;
+  longest = Math.max(longest, run);
+}
+// Like GitHub, a streak is still "current" if today has nothing yet but yesterday does.
+let current = 0;
+for (let i = days.length - 1; i >= 0; i--) {
+  if (days[i].count > 0) current++;
+  else if (i === days.length - 1) continue;
+  else break;
+}
+const best = days.reduce((a, b) => (b.count > a.count ? b : a), days[0] ?? { count: 0, date: '' });
+const weekdayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+const perWeekday = [0, 1, 2, 3, 4, 5, 6].map((w) => days.filter((d) => d.row === w).reduce((n, d) => n + d.count, 0));
+const topWeekday = weekdayNames[perWeekday.indexOf(Math.max(...perWeekday))];
+
+const longDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const fmtNum = new Intl.NumberFormat('en-US');
+const plural = (n: number, one: string, many = `${one}s`) => `${fmtNum.format(n)} ${n === 1 ? one : many}`;
+
+// Monthly totals for the table view.
+const monthly = new Map<string, { label: string; count: number; active: number }>();
+const monthYear = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+for (const d of days) {
+  const key = d.date.slice(0, 7);
+  const m = monthly.get(key) ?? { label: monthYear.format(utc(d.date)), count: 0, active: 0 };
+  m.count += d.count;
+  if (d.count) m.active++;
+  monthly.set(key, m);
+}
+
+const updated = longDate.format(Date.parse(data.fetchedAt));
+const profile = `https://github.com/${data.login}`;
+const summary = `${plural(total, 'contribution')} on GitHub in the last year, on ${plural(activeDays, 'day')}. Longest streak ${plural(longest, 'day')}.`;
+---
+
+{
+  available && (
+    <article class="card contrib" style="--c: var(--c-amber)" data-contrib>
+      <header class="contrib-head">
+        <div>
+          <p class="kicker">
+            GitHub activity
+            {data.source === 'sample' && <span class="badge badge-draft">sample data</span>}
+          </p>
+          <p class="headline">
+            <strong>{fmtNum.format(total)}</strong> contributions in the last year
+          </p>
+        </div>
+        <a class="profile" href={profile} rel="me">
+          @{data.login} ↗
+        </a>
+      </header>
+
+      <div class="scroller" data-scroller>
+        <svg
+          class="heatmap"
+          viewBox={`0 0 ${width} ${height}`}
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          aria-describedby="contrib-hint"
+          tabindex="0"
+          data-heatmap
+          data-pitch={PITCH}
+          data-left={LEFT}
+          data-top={TOP}
+        >
+          {months.map((m) => (
+            <text x={m.x} y="10" class="axis">
+              {m.label}
+            </text>
+          ))}
+          {[1, 3, 5].map((r) => (
+            <text x="0" y={TOP + r * PITCH + CELL - 2} class="axis">
+              {['', 'Mon', '', 'Wed', '', 'Fri', ''][r]}
+            </text>
+          ))}
+          <g>
+            {days.map((d) => (
+              <rect
+                class={`cell lv${d.level}`}
+                x={LEFT + d.col * PITCH}
+                y={TOP + d.row * PITCH}
+                width={CELL}
+                height={CELL}
+                rx="2.5"
+                data-date={d.date}
+                data-count={d.count}
+                style={`--col: ${d.col}`}
+              />
+            ))}
+          </g>
+          <rect class="focus-ring" width={CELL + 4} height={CELL + 4} rx="4" data-ring />
+        </svg>
+        <div class="tip" role="status" aria-live="polite" data-tip hidden>
+          <strong data-tip-value></strong>
+          <span data-tip-date></span>
+        </div>
+      </div>
+      <p id="contrib-hint" class="sr-only">Focus the chart and use the arrow keys to read each day.</p>
+
+      <footer class="contrib-foot">
+        <dl class="stats">
+          <div>
+            <dt>Longest streak</dt>
+            <dd>{plural(longest, 'day')}</dd>
+          </div>
+          <div>
+            <dt>Current streak</dt>
+            <dd>{plural(current, 'day')}</dd>
+          </div>
+          <div>
+            <dt>Best day</dt>
+            <dd>
+              {fmtNum.format(best.count)} <span class="muted">· {best.date ? longDate.format(utc(best.date)) : '—'}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Most active on</dt>
+            <dd>{topWeekday}</dd>
+          </div>
+        </dl>
+        <div class="legend" aria-hidden="true">
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((l) => (
+            <i class={`lv${l}`} />
+          ))}
+          <span>More</span>
+        </div>
+      </footer>
+
+      <details class="table-view">
+        <summary>Monthly totals · updated {updated}</summary>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Month</th>
+              <th scope="col">Contributions</th>
+              <th scope="col">Active days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...monthly.values()].map((m) => (
+              <tr>
+                <th scope="row">{m.label}</th>
+                <td>{fmtNum.format(m.count)}</td>
+                <td>{m.active}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
+    </article>
+  )
+}
+
+<script>
+  const card = document.querySelector<HTMLElement>('[data-contrib]');
+  const svg = card?.querySelector<SVGSVGElement>('[data-heatmap]');
+  if (card && svg) {
+    const scroller = card.querySelector<HTMLElement>('[data-scroller]')!;
+    const tip = card.querySelector<HTMLElement>('[data-tip]')!;
+    const tipValue = card.querySelector<HTMLElement>('[data-tip-value]')!;
+    const tipDate = card.querySelector<HTMLElement>('[data-tip-date]')!;
+    const ring = svg.querySelector<SVGRectElement>('[data-ring]')!;
+    const cells = [...svg.querySelectorAll<SVGRectElement>('.cell')];
+    const pitch = Number(svg.dataset.pitch);
+    const left = Number(svg.dataset.left);
+    const top = Number(svg.dataset.top);
+    const byPos = new Map(cells.map((c) => [`${(Number(c.getAttribute('x')) - left) / pitch},${(Number(c.getAttribute('y')) - top) / pitch}`, c]));
+    const fmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    let active: SVGRectElement | null = null;
+
+    // Phones show the most recent weeks first.
+    scroller.scrollLeft = scroller.scrollWidth;
+
+    function show(cell: SVGRectElement | null) {
+      active = cell;
+      if (!cell) {
+        tip.hidden = true;
+        ring.style.opacity = '0';
+        return;
+      }
+      const count = Number(cell.dataset.count);
+      tipValue.textContent = `${count === 0 ? 'No' : count} contribution${count === 1 ? '' : 's'}`;
+      tipDate.textContent = fmt.format(Date.parse(`${cell.dataset.date}T00:00:00Z`));
+      ring.setAttribute('x', String(Number(cell.getAttribute('x')) - 2));
+      ring.setAttribute('y', String(Number(cell.getAttribute('y')) - 2));
+      ring.style.opacity = '1';
+      tip.hidden = false;
+      // Position above the cell, inside the scroller's coordinate space.
+      const box = cell.getBoundingClientRect();
+      const host = scroller.getBoundingClientRect();
+      const x = box.left - host.left + scroller.scrollLeft + box.width / 2;
+      const maxX = scroller.scrollWidth - tip.offsetWidth / 2 - 4;
+      tip.style.left = `${Math.max(tip.offsetWidth / 2 + 4, Math.min(maxX, x))}px`;
+      tip.style.top = `${box.top - host.top - 8}px`;
+    }
+
+    // The hit area is the whole grid step (cell + gap), not just the painted square.
+    svg.addEventListener('pointermove', (e) => {
+      const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM()!.inverse());
+      const cell = byPos.get(`${Math.floor((pt.x - left + 1.5) / pitch)},${Math.floor((pt.y - top + 1.5) / pitch)}`);
+      if (cell !== active) show(cell ?? null);
+    });
+    svg.addEventListener('pointerleave', () => show(null));
+
+    // Keyboard: arrows walk the calendar, same readout as hover.
+    svg.addEventListener('focus', () => show(active ?? cells.at(-1)!));
+    svg.addEventListener('blur', () => show(null));
+    svg.addEventListener('keydown', (e) => {
+      if (!active) return;
+      const col = (Number(active.getAttribute('x')) - left) / pitch;
+      const row = (Number(active.getAttribute('y')) - top) / pitch;
+      const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      const move = moves[e.key];
+      if (move) {
+        e.preventDefault();
+        const next = byPos.get(`${col + move[0]},${row + move[1]}`);
+        if (next) show(next);
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        show(e.key === 'Home' ? cells[0] : cells.at(-1)!);
+      }
+    });
+
+    // Light the days up column by column, like a long exposure, the first time the card is seen.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      svg.classList.add('armed');
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return;
+          svg.classList.add('lit');
+          io.disconnect();
+        },
+        { threshold: 0.3 },
+      );
+      io.observe(svg);
+    }
+  }
+</script>
+
+<style>
+  .contrib {
+    /* One-hue amber ramp (sequential): empty days are a neutral step, then light → dark.
+       Validated with the dataviz ordinal checks against --bg-raised in each mode. */
+    --lv0: #ece4d6;
+    --lv1: #f0a53a;
+    --lv2: #d98300;
+    --lv3: #a45c00;
+    --lv4: #693a00;
+    gap: 1rem;
+  }
+
+  :global(:root[data-theme='dark']) .contrib {
+    --lv0: #262a40;
+    --lv1: #6e4c17;
+    --lv2: #a86c12;
+    --lv3: #e39a24;
+    --lv4: #ffcf7a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .contrib {
+      --lv0: #262a40;
+      --lv1: #6e4c17;
+      --lv2: #a86c12;
+      --lv3: #e39a24;
+      --lv4: #ffcf7a;
+    }
+  }
+
+  .contrib-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .headline {
+    margin-top: 0.3rem !important;
+    font-size: var(--step-1);
+    color: var(--fg-muted);
+  }
+
+  .headline strong {
+    color: var(--fg);
+    font-size: var(--step-2);
+    letter-spacing: -0.02em;
+  }
+
+  .kicker .badge {
+    margin-left: 0.4rem;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .profile {
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .scroller {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-top: 0.25rem;
+    scrollbar-width: thin;
+  }
+
+  .heatmap {
+    display: block;
+    width: 100%;
+    min-width: 720px;
+    height: auto;
+    border-radius: 6px;
+  }
+
+  .heatmap:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .axis {
+    font-size: 9.5px;
+    fill: var(--fg-faint);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  .cell {
+    transition: filter 0.15s;
+  }
+
+  .lv0 {
+    fill: var(--lv0);
+    background: var(--lv0);
+  }
+  .lv1 {
+    fill: var(--lv1);
+    background: var(--lv1);
+  }
+  .lv2 {
+    fill: var(--lv2);
+    background: var(--lv2);
+  }
+  .lv3 {
+    fill: var(--lv3);
+    background: var(--lv3);
+  }
+  .lv4 {
+    fill: var(--lv4);
+    background: var(--lv4);
+  }
+
+  .focus-ring {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+  }
+
+  .heatmap.armed .cell {
+    opacity: 0;
+  }
+
+  .heatmap.armed.lit .cell {
+    animation: light-up 0.5s var(--ease-out) forwards;
+    animation-delay: calc(var(--col) * 14ms);
+  }
+
+  @keyframes light-up {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .cell {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .tip {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    gap: 0.05rem;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--shadow);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+  }
+
+  .tip strong {
+    color: var(--fg);
+    font-size: 0.85rem;
+  }
+
+  .tip span {
+    color: var(--fg-muted);
+  }
+
+  .contrib-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    margin: 0;
+  }
+
+  .stats dt {
+    font-size: 0.72rem;
+    color: var(--fg-faint);
+  }
+
+  .stats dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stats .muted {
+    font-weight: 400;
+    font-size: 0.8rem;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.72rem;
+    color: var(--fg-faint);
+  }
+
+  .legend span:first-child {
+    margin-right: 0.3rem;
+  }
+
+  .legend span:last-child {
+    margin-left: 0.3rem;
+  }
+
+  .legend i {
+    width: 11px;
+    height: 11px;
+    border-radius: 2.5px;
+  }
+
+  .table-view {
+    font-size: 0.8rem;
+    color: var(--fg-faint);
+  }
+
+  .table-view summary {
+    cursor: pointer;
+    width: fit-content;
+  }
+
+  .table-view summary:hover {
+    color: var(--fg-muted);
+  }
+
+  .table-view table {
+    width: 100%;
+    max-width: 28rem;
+    margin-top: 0.6rem;
+    border-collapse: collapse;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table-view th,
+  .table-view td {
+    padding: 0.3rem 0.5rem 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-weight: 400;
+  }
+
+  .table-view thead th {
+    color: var(--fg-faint);
+    font-size: 0.72rem;
+  }
+
+  .table-view td {
+    text-align: right;
+  }
+
+  @media (max-width: 520px) {
+    .contrib-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

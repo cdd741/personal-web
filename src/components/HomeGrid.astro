@@ -1,4 +1,5 @@
 ---
+import Contributions from './Contributions.astro';
 import FormattedDate from './FormattedDate.astro';
 import PixelSprite from './PixelSprite.astro';
 import { getPosts, getProjects } from '../lib';
@@ -63,6 +64,9 @@ const DEFAULT_SLIDER = 72;
     </div>
     <p class="play-score mono" data-best>Outrun the cacti →</p>
   </a>
+
+  <!-- GitHub activity -->
+  <Contributions />
 
   <!-- Latest writing -->
   {
@@ -138,6 +142,7 @@ const DEFAULT_SLIDER = 72;
     grid-template-areas:
       'sig sig clock now'
       'sig sig play now'
+      'gh gh gh gh'
       'post post resume projects';
     gap: 1rem;
     margin-top: 2.5rem;
@@ -164,64 +169,8 @@ const DEFAULT_SLIDER = 72;
   .projects {
     grid-area: projects;
   }
-
-  /* ---------- card shell ---------- */
-  .card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 0;
-    padding: 1.2rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg-raised);
-    color: inherit;
-    text-decoration: none;
-    overflow: hidden;
-    isolation: isolate;
-    transition:
-      transform 0.25s var(--ease-out),
-      box-shadow 0.25s,
-      border-color 0.25s;
-  }
-
-  a.card:hover,
-  .card:has(.stretch:hover) {
-    color: inherit;
-    transform: translateY(-3px);
-    border-color: color-mix(in oklab, var(--c) 45%, var(--border));
-    box-shadow: 0 18px 40px -20px color-mix(in oklab, var(--c) 60%, transparent);
-  }
-
-  .card p {
-    margin: 0;
-  }
-
-  .kicker {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--fg-faint);
-  }
-
-  .kicker::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--c);
-    box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 60%, transparent);
-  }
-
-  .card-foot {
-    margin-top: auto !important;
-    font-size: 0.75rem;
-    color: var(--fg-faint);
+  .grid > :global(.contrib) {
+    grid-area: gh;
   }
 
   /* ---------- signature ---------- */
@@ -486,6 +435,7 @@ const DEFAULT_SLIDER = 72;
       grid-template-areas:
         'sig sig'
         'clock play'
+        'gh gh'
         'now now'
         'post post'
         'resume projects';
@@ -499,7 +449,7 @@ const DEFAULT_SLIDER = 72;
   @media (max-width: 520px) {
     .grid {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'sig' 'clock' 'now' 'post' 'play' 'resume' 'projects';
+      grid-template-areas: 'sig' 'clock' 'gh' 'now' 'post' 'play' 'resume' 'projects';
     }
 
     .sig {

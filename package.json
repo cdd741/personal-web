@@ -7,9 +7,12 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/fetch-contributions.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/fetch-contributions.mjs",
     "build": "astro build && node scripts/placeholders.mjs",
     "preview": "astro preview",
+    "precheck": "node scripts/fetch-contributions.mjs",
     "check": "astro check",
     "astro": "astro",
     "placeholders": "node scripts/placeholders.mjs",
@@ -24,8 +27,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "hersheytext": "^2.0.0",
-    "moment-timezone": "^0.6.4",
     "playwright": "^1.63.0",
     "typescript": "^6.0.3"
   }
