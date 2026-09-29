@@ -224,6 +224,10 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     // Phones show the most recent weeks first.
     scroller.scrollLeft = scroller.scrollWidth;
 
+    // The tooltip lives at the page level so neither the scrolling heatmap nor the cards
+    // around it can clip or cover it.
+    document.body.append(tip);
+
     function show(cell: SVGRectElement | null) {
       active = cell;
       if (!cell) {
@@ -238,14 +242,24 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
       ring.setAttribute('y', String(Number(cell.getAttribute('y')) - 2));
       ring.style.opacity = '1';
       tip.hidden = false;
-      // Position above the cell, inside the scroller's coordinate space.
-      const box = cell.getBoundingClientRect();
-      const host = scroller.getBoundingClientRect();
-      const x = box.left - host.left + scroller.scrollLeft + box.width / 2;
-      const maxX = scroller.scrollWidth - tip.offsetWidth / 2 - 4;
-      tip.style.left = `${Math.max(tip.offsetWidth / 2 + 4, Math.min(maxX, x))}px`;
-      tip.style.top = `${box.top - host.top - 8}px`;
+      place(cell);
     }
+
+    /** Above the cell when there's room in the viewport, otherwise below; never off-screen sideways. */
+    function place(cell: SVGRectElement) {
+      const box = cell.getBoundingClientRect();
+      const half = tip.offsetWidth / 2;
+      const x = Math.max(half + 8, Math.min(window.innerWidth - half - 8, box.left + box.width / 2));
+      const below = box.top - 8 - tip.offsetHeight < 8;
+      tip.dataset.side = below ? 'below' : 'above';
+      tip.style.left = `${x}px`;
+      tip.style.top = `${below ? box.bottom + 8 : box.top - 8}px`;
+    }
+
+    // Keep the tooltip on its cell while the page or the heatmap scrolls.
+    const follow = () => active && !tip.hidden && place(active);
+    window.addEventListener('scroll', follow, { passive: true });
+    scroller.addEventListener('scroll', follow, { passive: true });
 
     // The hit area is the whole grid step (cell + gap), not just the painted square.
     svg.addEventListener('pointermove', (e) => {
@@ -438,8 +452,8 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
   }
 
   .tip {
-    position: absolute;
-    z-index: 2;
+    position: fixed;
+    z-index: 90;
     display: grid;
     gap: 0.05rem;
     padding: 0.4rem 0.65rem;
@@ -452,6 +466,10 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     white-space: nowrap;
     pointer-events: none;
     transform: translate(-50%, -100%);
+  }
+
+  .tip[data-side='below'] {
+    transform: translate(-50%, 0);
   }
 
   .tip strong {
