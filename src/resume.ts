@@ -18,7 +18,7 @@ export interface Role {
 export const RESUME = {
   name: SITE.name,
   headline: 'Software Engineer',
-  location: `${SITE.location.city}, France`,
+  location: 'Paris, France', // TODO: confirm, or leave out
   contacts: [
     { label: 'andre-chen.com', href: SITE.url },
     { label: 'github.com/cdd741', href: SITE.links.github },

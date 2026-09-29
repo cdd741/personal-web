@@ -22,8 +22,6 @@ export const SITE = {
     'I studied math at the University of Waterloo, graduating in 2020.',
     "Outside of work I take photos (long exposures of city lights, mainly), tinker with small games, and occasionally write things down here.",
   ] as string[],
-  /** Where the home page clock and sky are set. */
-  location: { city: 'Paris', timeZone: 'Europe/Paris', lat: 48.8566, lon: 2.3522 },
   /**
    * The home page "Now" card.
    * PLACEHOLDER: dummy entries, replace with what you're actually up to.
