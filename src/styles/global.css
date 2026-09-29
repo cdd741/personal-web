@@ -1,19 +1,34 @@
 /* ---------- tokens ---------- */
 :root {
   color-scheme: light;
-  --bg: #fbfbf9;
+  /* Warm paper by day. */
+  --bg: #fbf8f3;
   --bg-raised: #ffffff;
-  --fg: #16161a;
-  --fg-muted: #66666e;
-  --fg-faint: #9a9aa1;
-  --border: #e8e7e3;
-  --border-strong: #d4d3ce;
+  --fg: #1d1915;
+  --fg-muted: #6b635a;
+  --fg-faint: #a0978c;
+  --border: #ece5da;
+  --border-strong: #dcd2c3;
+
+  /* Light-trail colors, borrowed from the hero: tail light, sodium lamp, neon, LED. */
   --accent: #e0403a;
+  --c-red: #e0403a;
+  --c-amber: #e8900c;
+  --c-pink: #db3f86;
+  --c-cyan: #0b98bd;
+  --c-violet: #6e56e8;
+  --c-green: #22946a;
+  --trail: linear-gradient(90deg, var(--c-amber), var(--c-red) 55%, var(--c-pink));
+
   --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
-  --selection: color-mix(in oklab, var(--accent) 22%, transparent);
-  --night: #07080c;
+  --selection: color-mix(in oklab, var(--c-amber) 30%, transparent);
+  --glow-a: color-mix(in oklab, var(--c-amber) 16%, transparent);
+  --glow-b: color-mix(in oklab, var(--c-pink) 9%, transparent);
+  --glow-c: color-mix(in oklab, var(--c-cyan) 10%, transparent);
+  --night: #0b0f24;
   --frame-ring: transparent;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+  --shadow: 0 1px 2px rgb(60 30 10 / 0.05), 0 8px 24px rgb(60 30 10 / 0.07);
+  --frame-shadow: 0 30px 70px -30px color-mix(in oklab, var(--c-red) 45%, transparent), 0 12px 30px -12px rgb(40 20 10 / 0.25);
 
   --radius: 14px;
   --radius-sm: 8px;
@@ -33,30 +48,51 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #0b0b0e;
-    --bg-raised: #141418;
-    --fg: #ececef;
-    --fg-muted: #9d9da6;
-    --fg-faint: #6a6a73;
-    --border: #222228;
-    --border-strong: #33333b;
-    --accent: #ff5f57;
+    /* Blue-black night, not flat black. */
+    --bg: #0c0e18;
+    --bg-raised: #151827;
+    --fg: #eeebe6;
+    --fg-muted: #a3a1b4;
+    --fg-faint: #6d6b82;
+    --border: #232639;
+    --border-strong: #33374f;
+    --accent: #ff6259;
+    --c-red: #ff6259;
+    --c-amber: #ffb547;
+    --c-pink: #ff6fae;
+    --c-cyan: #4fd1f2;
+    --c-violet: #a594ff;
+    --c-green: #5fdca5;
+    --glow-a: color-mix(in oklab, var(--c-amber) 9%, transparent);
+    --glow-b: color-mix(in oklab, var(--c-pink) 7%, transparent);
+    --glow-c: color-mix(in oklab, var(--c-cyan) 8%, transparent);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
+    --frame-shadow: 0 30px 80px -30px color-mix(in oklab, var(--c-red) 35%, transparent), 0 12px 32px rgb(0 0 0 / 0.5);
     --frame-ring: var(--border);
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0b0b0e;
-  --bg-raised: #141418;
-  --fg: #ececef;
-  --fg-muted: #9d9da6;
-  --fg-faint: #6a6a73;
-  --border: #222228;
-  --border-strong: #33333b;
-  --accent: #ff5f57;
+  --bg: #0c0e18;
+  --bg-raised: #151827;
+  --fg: #eeebe6;
+  --fg-muted: #a3a1b4;
+  --fg-faint: #6d6b82;
+  --border: #232639;
+  --border-strong: #33374f;
+  --accent: #ff6259;
+  --c-red: #ff6259;
+  --c-amber: #ffb547;
+  --c-pink: #ff6fae;
+  --c-cyan: #4fd1f2;
+  --c-violet: #a594ff;
+  --c-green: #5fdca5;
+  --glow-a: color-mix(in oklab, var(--c-amber) 9%, transparent);
+  --glow-b: color-mix(in oklab, var(--c-pink) 7%, transparent);
+  --glow-c: color-mix(in oklab, var(--c-cyan) 8%, transparent);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
+  --frame-shadow: 0 30px 80px -30px color-mix(in oklab, var(--c-red) 35%, transparent), 0 12px 32px rgb(0 0 0 / 0.5);
   --frame-ring: var(--border);
 }
 
@@ -87,6 +123,25 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+}
+
+/* Soft pools of colored light at the top of every page, like out-of-focus street lights. */
+body {
+  position: relative;
+  isolation: isolate;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 22rem at 90% -4%, var(--glow-a), transparent 70%),
+    radial-gradient(36rem 20rem at 4% 4%, var(--glow-c), transparent 70%),
+    radial-gradient(30rem 18rem at 55% 28%, var(--glow-b), transparent 70%);
 }
 
 main {
@@ -120,6 +175,7 @@ a {
 }
 
 a:hover {
+  color: color-mix(in oklab, var(--accent) 85%, var(--fg));
   text-decoration-color: var(--accent);
 }
 
@@ -190,7 +246,20 @@ button {
 
 .page-head h1 {
   font-size: var(--step-3);
-  margin: 0 0 0.5rem;
+  margin: 0 0 1rem;
+}
+
+/* A short light trail under page titles: the pedal-light wave from the hero. */
+.trail-rule,
+.page-head h1::after {
+  content: '';
+  display: block;
+  width: 7.5rem;
+  height: 12px;
+  margin-top: 0.7rem;
+  background: var(--trail);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M2 3Q9 11 16 3T30 3T44 3T58 3T72 3T86 3T100 3T114 3' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M2 3Q9 11 16 3T30 3T44 3T58 3T72 3T86 3T100 3T114 3' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
 }
 
 .page-head p {
@@ -215,6 +284,18 @@ button {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--fg-faint);
+}
+
+.section-title > span::before {
+  content: '';
+  display: inline-block;
+  width: 1.4rem;
+  height: 2px;
+  margin-right: 0.65rem;
+  border-radius: 2px;
+  vertical-align: 0.3em;
+  background: var(--trail);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--c-amber) 70%, transparent);
 }
 
 .section-title a {
@@ -249,6 +330,12 @@ button {
   border: 1px solid var(--border-strong);
   color: var(--fg-muted);
   vertical-align: 0.15em;
+}
+
+.badge-tag {
+  color: color-mix(in oklab, var(--tag) 75%, var(--fg));
+  background: color-mix(in oklab, var(--tag) 11%, transparent);
+  border-color: color-mix(in oklab, var(--tag) 32%, transparent);
 }
 
 .badge-draft {
@@ -290,14 +377,16 @@ button {
 
 .prose blockquote {
   padding-left: 1.1em;
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid;
+  border-image: linear-gradient(var(--c-amber), var(--c-pink)) 1;
   color: var(--fg-muted);
 }
 
 .prose :not(pre) > code {
   padding: 0.12em 0.35em;
   border-radius: 5px;
-  background: var(--accent-soft);
+  color: color-mix(in oklab, var(--c-violet) 70%, var(--fg));
+  background: color-mix(in oklab, var(--c-violet) 10%, transparent);
 }
 
 .prose pre {
@@ -361,5 +450,28 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- print ---------- */
+@media print {
+  .site-header,
+  .site-footer,
+  .skip,
+  .cmdk,
+  .toast-region {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  main {
+    padding: 0;
   }
 }

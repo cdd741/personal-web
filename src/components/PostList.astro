@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import FormattedDate from './FormattedDate.astro';
+import { tagStyle } from '../tag-color';
 
 interface Props {
   posts: CollectionEntry<'writing'>[];
@@ -13,8 +14,9 @@ const { posts } = Astro.props;
   posts.length ? (
     <ul class="posts">
       {posts.map((post) => (
-        <li>
+        <li style={tagStyle(post.data.tags[0] ?? post.data.title)}>
           <a href={`/writing/${post.id}/`}>
+            <span class="dot" aria-hidden="true" />
             <span class="title">
               {post.data.title}
               {post.data.draft && <span class="badge badge-draft">draft</span>}
@@ -57,7 +59,22 @@ const { posts } = Astro.props;
   }
 
   a:hover .title {
-    color: var(--accent);
+    color: color-mix(in oklab, var(--tag) 85%, var(--fg));
+  }
+
+  .dot {
+    flex: none;
+    align-self: center;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tag);
+    box-shadow: 0 0 8px 1px color-mix(in oklab, var(--tag) 60%, transparent);
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  a:hover .dot {
+    transform: scale(1.4);
   }
 
   .date {

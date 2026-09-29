@@ -1,16 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
-import PixelSprite from '../components/PixelSprite.astro';
-import PostList from '../components/PostList.astro';
-import ProjectList from '../components/ProjectList.astro';
-import { getPosts, getProjects } from '../lib';
-import { REX_STAND } from '../scripts/sprites';
+import HomeGrid from '../components/HomeGrid.astro';
 import { SITE } from '../site.config';
-
-const featured = (await getProjects()).filter((p) => p.data.featured).slice(0, 4);
-const posts = (await getPosts()).slice(0, 3);
-const { education: edu } = SITE;
 ---
 
 <Base>
@@ -23,113 +15,62 @@ const { education: edu } = SITE;
 
   <Hero />
 
-  <div class="container">
-    <section class="intro section">
-      <p>
-        I'm a {SITE.role.toLowerCase()} at <a href={SITE.company.url}>{SITE.company.name}</a>. I studied math at the {edu.school}, graduating in {edu.year} with a minor in {edu.minor.toLowerCase()}.
-      </p>
-      <p class="muted">This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
-      <ul class="links">
-        <li><a href={SITE.links.github} rel="me">GitHub ↗</a></li>
-        {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me">LinkedIn ↗</a></li>}
-        <li><a href="/about/">More about me →</a></li>
-      </ul>
-    </section>
-
-    <section class="section" aria-labelledby="projects-title">
-      <h2 class="section-title" id="projects-title">
-        Selected projects <a href="/projects/">All projects →</a>
-      </h2>
-      <ProjectList projects={featured} />
-    </section>
-
-    <section class="section" aria-labelledby="writing-title">
-      <h2 class="section-title" id="writing-title">
-        Writing <a href="/writing/">All writing →</a>
-      </h2>
-      <PostList posts={posts} />
-    </section>
-
-    <section class="section">
-      <a class="play-teaser" href="/play/">
-        <PixelSprite sprite={REX_STAND} px={2.5} class="rex" />
-        <span>
-          <strong>Need a break?</strong>
-          <span class="muted">Outrun a few cacti. Stay for the night shift.</span>
-        </span>
-        <span class="arrow" aria-hidden="true">→</span>
-      </a>
-    </section>
+  <div class="container-wide intro">
+    <p>This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
+    <ul class="links">
+      <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
+      {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
+      <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
+    </ul>
   </div>
+
+  <HomeGrid />
 </Base>
 
 <style>
   .intro {
-    padding-top: 3rem;
-    font-size: var(--step-1);
-    line-height: 1.55;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding-top: 2.75rem;
   }
 
   .intro p {
-    margin: 0 0 0.9rem;
-  }
-
-  .intro .muted {
-    font-size: var(--step-0);
+    margin: 0;
+    max-width: 34rem;
+    font-size: var(--step-1);
+    line-height: 1.5;
   }
 
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    margin: 1.5rem 0 0;
+    gap: 0.6rem;
+    margin: 0;
     padding: 0;
     list-style: none;
-    font-size: var(--step-0);
+    font-size: var(--step--1);
   }
 
-  .play-teaser {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 1.25rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+  .links a {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid color-mix(in oklab, var(--c) 35%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--c) 8%, transparent);
+    color: color-mix(in oklab, var(--c) 70%, var(--fg));
     text-decoration: none;
     transition:
-      border-color 0.2s,
-      background-color 0.2s;
+      background-color 0.2s,
+      box-shadow 0.2s,
+      transform 0.2s var(--ease-out);
   }
 
-  .play-teaser:hover {
-    border-color: var(--border-strong);
-    background: var(--bg-raised);
-  }
-
-  .play-teaser > span:not(.arrow) {
-    display: grid;
-  }
-
-  .rex {
-    flex: none;
-    color: var(--fg);
-    transition: transform 0.25s var(--ease-out);
-  }
-
-  .play-teaser:hover .rex {
-    transform: translateY(-6px);
-  }
-
-  .arrow {
-    margin-left: auto;
-    color: var(--fg-faint);
-    transition:
-      transform 0.2s var(--ease-out),
-      color 0.2s;
-  }
-
-  .play-teaser:hover .arrow {
-    transform: translateX(4px);
-    color: var(--accent);
+  .links a:hover {
+    background: color-mix(in oklab, var(--c) 16%, transparent);
+    box-shadow: 0 0 20px -4px color-mix(in oklab, var(--c) 55%, transparent);
+    transform: translateY(-1px);
   }
 </style>
