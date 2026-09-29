@@ -7,9 +7,12 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/fetch-contributions.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/fetch-contributions.mjs",
     "build": "astro build && node scripts/placeholders.mjs",
     "preview": "astro preview",
+    "precheck": "node scripts/fetch-contributions.mjs",
     "check": "astro check",
     "astro": "astro",
     "placeholders": "node scripts/placeholders.mjs",
