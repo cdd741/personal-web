@@ -1,6 +1,7 @@
 // Generates src/data/signature.json: "Andre" in a single-stroke Hershey script font
 // (ems_allure), resampled into evenly spaced points for the Fourier signature card.
-// Run once after changing the text or font: node scripts/build-signature.mjs
+// Run once after changing the text or font (the font package is only needed here, so it isn't a
+// project dependency): npm i --no-save hersheytext@2 && node scripts/build-signature.mjs
 import { writeFileSync } from 'node:fs';
 import hershey from 'hersheytext';
 
