@@ -1,17 +1,12 @@
 /**
- * A clock card whose background is the actual sky over a city right now: the sun's
- * elevation is computed from the date and coordinates, and mapped to night, blue
- * hour, golden hour or day.
+ * A clock card showing the visitor's own local time, under the sky they're under
+ * right now. The browser's time zone gives the time; the zone's representative city
+ * (from the tz database) gives rough coordinates for the sun, with no location prompt.
  */
 
-export interface Place {
-  city: string;
-  timeZone: string;
-  lat: number;
-  lon: number;
-}
-
 const RAD = Math.PI / 180;
+/** Sun elevation at sunrise/sunset, allowing for refraction and the sun's radius. */
+const HORIZON = -0.833;
 
 /** Sun elevation and hour angle in degrees (a low-precision almanac formula, good to ~1°). */
 export function sunPosition(date: Date, lat: number, lon: number) {
@@ -27,6 +22,34 @@ export function sunPosition(date: Date, lat: number, lon: number) {
   ha = Math.atan2(Math.sin(ha), Math.cos(ha));
   const el = Math.asin(Math.sin(lat * RAD) * Math.sin(dec) + Math.cos(lat * RAD) * Math.cos(dec) * Math.cos(ha));
   return { elevation: el / RAD, hourAngle: ha / RAD };
+}
+
+/** The next sunrise or sunset within a day, found by stepping forward then bisecting. */
+function nextSunEvent(now: Date, lat: number, lon: number) {
+  const above = (t: number) => sunPosition(new Date(t), lat, lon).elevation > HORIZON;
+  const start = now.getTime();
+  const wasUp = above(start);
+  const step = 10 * 60000;
+  for (let t = start + step; t <= start + 26 * 3600000; t += step) {
+    if (above(t) === wasUp) continue;
+    let lo = t - step;
+    let hi = t;
+    while (hi - lo > 30000) {
+      const mid = (lo + hi) / 2;
+      if (above(mid) === wasUp) lo = mid;
+      else hi = mid;
+    }
+    return { kind: wasUp ? 'Sunset' : 'Sunrise', minutes: Math.round((hi - start) / 60000) };
+  }
+  return { kind: wasUp ? 'Midnight sun' : 'Polar night', minutes: -1 };
+}
+
+function describeSunEvent({ kind, minutes }: { kind: string; minutes: number }) {
+  if (minutes < 0) return kind === 'Midnight sun' ? 'The sun won’t set today.' : 'No sunrise today.';
+  if (minutes < 1) return `${kind} right about now.`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${kind} in ${h ? `${h} h ` : ''}${m ? `${m} min` : ''}`.trim() + '.';
 }
 
 type Sky = { top: string; bottom: string; ink: string; label: string };
@@ -49,55 +72,67 @@ function greeting(hour: number) {
   return 'Night';
 }
 
-/** Minutes a time zone is ahead of the visitor's own clock. */
-function offsetFromVisitor(timeZone: string, now: Date) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
-      .formatToParts(now)
-      .map((p) => [p.type, p.value]),
-  );
-  const there = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
-  const here = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-  return Math.round((there - here) / 60000);
+/** "America/Argentina/Buenos_Aires" → "Buenos Aires"; UTC and Etc/* zones have no city. */
+function cityOf(timeZone: string) {
+  if (!timeZone.includes('/') || timeZone.startsWith('Etc/')) return '';
+  return timeZone.split('/').at(-1)!.replace(/_/g, ' ');
 }
 
-function describeOffset(minutes: number, city: string) {
-  if (minutes === 0) return `Same time as you.`;
-  const h = Math.abs(minutes) / 60;
-  const amount = Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
-  return `${city} is ${amount} ${minutes > 0 ? 'ahead of' : 'behind'} you.`;
-}
-
-export function mountSkyClock(card: HTMLElement, place: Place) {
+export async function mountSkyClock(card: HTMLElement) {
   const time = card.querySelector<HTMLElement>('[data-time]')!;
   const label = card.querySelector<HTMLElement>('[data-sky-label]')!;
-  const offset = card.querySelector<HTMLElement>('[data-offset]')!;
+  const sunLine = card.querySelector<HTMLElement>('[data-sun]')!;
   const body = card.querySelector<HTMLElement>('[data-body]')!;
-  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: place.timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  let city = cityOf(timeZone);
+  // The visitor's own clock style: "9:48 PM" or "21:48".
+  const fmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+  const hourOf = (d: Date) => d.getHours();
+
+  // Rough coordinates: the zone's representative city, else longitude from the UTC offset.
+  let coords: readonly [number, number] | null = null;
 
   function update() {
     const now = new Date();
-    const { elevation, hourAngle } = sunPosition(now, place.lat, place.lon);
-    const hour = Number(fmt.format(now).slice(0, 2));
+    time.textContent = fmt.format(now);
+    const where = city ? ` in ${city}` : '';
+    if (!coords) {
+      label.textContent = `${greeting(hourOf(now))}${where}`;
+      return;
+    }
+    const [lat, lon] = coords;
+    const { elevation, hourAngle } = sunPosition(now, lat, lon);
     const sky = skyFor(elevation, hourAngle < 0);
     card.style.setProperty('--sky-top', sky.top);
     card.style.setProperty('--sky-bottom', sky.bottom);
     card.style.setProperty('--sky-ink', sky.ink);
-    // The sun (or moon) rides an arc: hour angle sets how far across, elevation how high.
-    const x = 50 + (hourAngle / 180) * 50;
+    // The sun (or moon) rides an arc across the right side of the card, clear of the time:
+    // hour angle sets how far across, elevation how high.
     const up = elevation > -4;
-    const y = up ? 78 - Math.max(0, Math.min(60, elevation)) : 22;
-    body.style.left = `${up ? x : 78}%`;
-    body.style.top = `${y}%`;
+    const across = Math.max(-1, Math.min(1, hourAngle / 120));
+    const height = Math.max(0, Math.min(1, elevation / 50));
+    body.style.left = `${up ? 86 + across * 7 : 86}%`;
+    body.style.top = `${up ? 78 - height * 58 : 22}%`;
     body.dataset.kind = up ? 'sun' : 'moon';
-    time.textContent = fmt.format(now);
     // Only mention the sky when it's something worth looking out the window for.
     const special = sky.label !== 'Night' && sky.label !== 'Daytime';
-    label.textContent = `${greeting(hour)} in ${place.city}${special ? ` · ${sky.label.toLowerCase()}` : ''}`;
-    offset.textContent = describeOffset(offsetFromVisitor(place.timeZone, now), place.city);
+    label.textContent = `${greeting(hourOf(now))}${where}${special ? ` · ${sky.label.toLowerCase()}` : ''}`;
+    sunLine.textContent = describeSunEvent(nextSunEvent(now, lat, lon));
   }
 
   update();
   const timer = setInterval(update, 15000);
+
+  try {
+    const { default: zones } = await import('../data/timezones.json');
+    // [lat, lon], plus the canonical zone name when the browser reported an old alias.
+    const hit = (zones as Record<string, (number | string)[]>)[timeZone];
+    if (hit && typeof hit[0] === 'number' && typeof hit[1] === 'number') coords = [hit[0], hit[1]];
+    if (typeof hit?.[2] === 'string') city = cityOf(hit[2]);
+  } catch {}
+  if (!coords) coords = [35, (-new Date().getTimezoneOffset() / 60) * 15];
+  update();
+
   return () => clearInterval(timer);
 }

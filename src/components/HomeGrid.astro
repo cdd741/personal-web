@@ -9,7 +9,7 @@ import { tagStyle } from '../tag-color';
 const [latest] = await getPosts();
 const projects = await getProjects();
 const projectTags = [...new Set(projects.flatMap((p) => p.data.tags))].slice(0, 8);
-const { location, now } = SITE;
+const { now } = SITE;
 
 /** Slider position (0–100) ↔ circle count, on a log scale so small counts get room. */
 const DEFAULT_SLIDER = 72;
@@ -29,21 +29,13 @@ const DEFAULT_SLIDER = 72;
     </label>
   </article>
 
-  <!-- Local time, under the real sky -->
-  <article
-    class="card clock"
-    data-clock
-    data-city={location.city}
-    data-tz={location.timeZone}
-    data-lat={location.lat}
-    data-lon={location.lon}
-    style="--c: var(--c-cyan)"
-  >
+  <!-- The visitor's own time, under the sky they're under -->
+  <article class="card clock" data-clock style="--c: var(--c-cyan)">
     <span class="celestial" data-body data-kind="sun" aria-hidden="true"></span>
-    <p class="kicker">Local time</p>
+    <p class="kicker">Your time</p>
     <p class="time mono" data-time>--:--</p>
-    <p class="clock-label" data-sky-label>{location.city}</p>
-    <p class="clock-offset" data-offset></p>
+    <p class="clock-label" data-sky-label>&nbsp;</p>
+    <p class="clock-offset" data-sun></p>
   </article>
 
   <!-- Now -->
@@ -129,10 +121,7 @@ const DEFAULT_SLIDER = 72;
 
   // Clock card.
   const clock = document.querySelector<HTMLElement>('[data-clock]');
-  if (clock) {
-    const { city = '', tz = 'UTC', lat = '0', lon = '0' } = clock.dataset;
-    mountSkyClock(clock, { city, timeZone: tz, lat: Number(lat), lon: Number(lon) });
-  }
+  if (clock) mountSkyClock(clock);
 
   // Play card: show the visitor's best score from /play, if they have one.
   const best = document.querySelector<HTMLElement>('[data-best]');
