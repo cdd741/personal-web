@@ -46,7 +46,7 @@ export const RESUME = {
       url: 'https://alan.com',
       role: 'Software Engineer',
       location: '',
-      start: 'Jan 2026',
+      start: '2026',
       end: 'Present',
       bullets: [
         'Engineer on the **Canada crew**, building Alan\'s health insurance product for the Canadian market.',
