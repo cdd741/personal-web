@@ -338,6 +338,15 @@ button {
   border-color: color-mix(in oklab, var(--tag) 32%, transparent);
 }
 
+/* Prizes: the site's pill badge, in the trail amber and a touch heavier, so a win stands out
+   among tags without introducing a new style. */
+.badge-award {
+  font-weight: 600;
+  color: color-mix(in oklab, var(--c-amber) 70%, var(--fg));
+  background: color-mix(in oklab, var(--c-amber) 14%, transparent);
+  border-color: color-mix(in oklab, var(--c-amber) 45%, transparent);
+}
+
 .badge-draft {
   border-style: dashed;
   color: var(--accent);
