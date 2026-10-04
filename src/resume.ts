@@ -33,7 +33,7 @@ export interface ResumeProject {
 export const RESUME = {
   name: SITE.name,
   headline: 'Software Engineer',
-  location: 'Paris, France', // TODO: confirm, or leave empty
+  location: 'Toronto, ON',
   contacts: [
     { label: 'andre-chen.com', href: SITE.url },
     { label: 'github.com/cdd741', href: SITE.links.github },
@@ -45,17 +45,17 @@ export const RESUME = {
       company: 'Alan',
       url: 'https://alan.com',
       role: 'Software Engineer',
-      location: '', // PLACEHOLDER: city
-      start: '20XX', // PLACEHOLDER: start date
+      location: '',
+      start: 'Jan 2026',
       end: 'Present',
-      bullets: [], // PLACEHOLDER: what you work on at Alan
+      bullets: [], // PLACEHOLDER: add 2–4 bullets on your work at Alan
     },
     {
       company: 'AlgoAce',
       role: 'Full-Stack Engineer',
       location: 'Toronto, ON',
       start: 'Nov 2022',
-      end: 'Present', // TODO: end date, now that you're at Alan?
+      end: '2025',
       bullets: [
         'Architected a scalable e-learning platform with **React (WebSockets), Python/Flask, JWT auth and SQLite**.',
         'Engineered an **AI Tutor** (ChatGPT API, custom prompt pipelines) that **cut manual grading time by 50%**.',
