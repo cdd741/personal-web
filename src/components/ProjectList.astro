@@ -23,8 +23,15 @@ const { projects } = Astro.props;
               </h3>
               <span class="year mono">{data.year}</span>
             </div>
+            {data.awards.length > 0 && (
+              <p class="awards">
+                {data.awards.map((a, i) => (
+                  <span class={i === 0 ? 'badge badge-award' : 'badge'}>{a}</span>
+                ))}
+              </p>
+            )}
             <p>{data.description}</p>
-            {(data.tags.length > 0 || (data.url && data.repo)) && (
+            {(data.tags.length > 0 || (data.url && data.repo) || data.links.length > 0 || data.team) && (
               <p class="meta">
                 {data.tags.map((t) => (
                   <span class="badge badge-tag" style={tagStyle(t)}>
@@ -32,6 +39,10 @@ const { projects } = Astro.props;
                   </span>
                 ))}
                 {data.url && data.repo && <a href={data.repo}>source</a>}
+                {data.links.map((l) => (
+                  <a href={l.href}>{l.label}</a>
+                ))}
+                {data.team && <span class="team">{[data.team, data.role].filter(Boolean).join(' · ')}</span>}
               </p>
             )}
           </li>
@@ -111,6 +122,26 @@ const { projects } = Astro.props;
   p {
     margin: 0.3rem 0 0;
     color: var(--fg-muted);
+  }
+
+  .awards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+  }
+
+  .awards .badge {
+    margin: 0;
+  }
+
+  .team {
+    color: var(--fg-faint);
+  }
+
+  .meta > * + .team::before {
+    content: '·';
+    margin-right: 0.4rem;
   }
 
   .meta {
