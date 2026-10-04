@@ -3,8 +3,12 @@ import Base from '../layouts/Base.astro';
 import { getProjects } from '../lib';
 import { RESUME, RESUME_PDF } from '../resume';
 
-const projects = (await getProjects()).filter((p) => p.data.featured).slice(0, 3);
-const { name, headline, location, contacts, summary, experience, education, skills } = RESUME;
+// Real, featured projects from the projects page; placeholders stay off the résumé.
+const featured = (await getProjects()).filter((p) => p.data.featured && !p.data.placeholder).slice(0, 2);
+const { name, headline, location, contacts, summary, experience, projects, education, skills } = RESUME;
+
+/** Splits "a **b** c" into ["a ", "b", " c"]; odd indices are bold. */
+const rich = (text: string) => text.split(/\*\*(.+?)\*\*/);
 ---
 
 <Base title="Résumé" description={`${name}: ${headline}. One-page résumé, also available as a PDF.`}>
@@ -24,7 +28,7 @@ const { name, headline, location, contacts, summary, experience, education, skil
       <header class="head">
         <div>
           <h2 class="name">{name}</h2>
-          <p class="headline">{headline} · {location}</p>
+          <p class="headline">{[headline, location].filter(Boolean).join(' · ')}</p>
         </div>
         <ul class="contacts">
           {
@@ -39,7 +43,7 @@ const { name, headline, location, contacts, summary, experience, education, skil
         </ul>
       </header>
 
-      <p class="summary">{summary}</p>
+      {summary && <p class="summary">{summary}</p>}
 
       <section>
         <h3>Experience</h3>
@@ -56,31 +60,51 @@ const { name, headline, location, contacts, summary, experience, education, skil
                   {job.start} – {job.end}
                 </p>
               </div>
-              <p class="where">{job.location}</p>
-              <ul>
-                {job.bullets.map((b) => (
-                  <li>{b}</li>
-                ))}
-              </ul>
+              {job.location && <p class="where">{job.location}</p>}
+              {job.bullets.length > 0 && (
+                <ul>
+                  {job.bullets.map((b) => (
+                    <li>{rich(b).map((part, i) => (i % 2 ? <strong>{part}</strong> : part))}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           ))
         }
       </section>
 
       {
-        projects.length > 0 && (
+        featured.length + projects.length > 0 && (
           <section>
             <h3>Projects</h3>
-            {projects.map(({ data }) => (
+            {featured.map(({ data }) => (
               <div class="entry entry-compact">
                 <div class="entry-head">
                   <p>
                     <strong>{(data.url ?? data.repo) ? <a href={data.url ?? data.repo}>{data.title}</a> : data.title}</strong>
+                    {data.awards[0] && <span class="award"> · {data.awards[0]}</span>}
                     {' · '}
                     <span class="soft">{data.description}</span>
                   </p>
                   <p class="when">{data.year}</p>
                 </div>
+              </div>
+            ))}
+            {projects.map((p) => (
+              <div class="entry entry-compact">
+                <div class="entry-head">
+                  <p>
+                    <strong>{p.title}</strong>
+                    {' · '}
+                    <span class="soft">{p.description}</span>
+                  </p>
+                  {p.year && <p class="when">{p.year}</p>}
+                </div>
+                <ul>
+                  {p.bullets.map((b) => (
+                    <li>{rich(b).map((part, i) => (i % 2 ? <strong>{part}</strong> : part))}</li>
+                  ))}
+                </ul>
               </div>
             ))}
           </section>
@@ -97,10 +121,10 @@ const { name, headline, location, contacts, summary, experience, education, skil
                   <strong>{ed.degree}</strong>
                   {' · '}
                   {ed.school}
+                  <span class="soft">, {ed.location}</span>
                 </p>
-                <p class="when">{ed.end}</p>
+                {ed.end && <p class="when">{ed.end}</p>}
               </div>
-              <p class="where">{ed.location}</p>
             </div>
           ))
         }
@@ -215,7 +239,7 @@ const { name, headline, location, contacts, summary, experience, education, skil
     --red: #e0403a;
     --pink: #db3f86;
 
-    padding: 0.6in 0.65in;
+    padding: 0.5in 0.6in;
     border-radius: 6px;
     background: #fff;
     color: var(--ink);
@@ -332,6 +356,15 @@ const { name, headline, location, contacts, summary, experience, education, skil
     color: var(--ink-soft);
   }
 
+  .award {
+    color: #b56a00;
+    font-weight: 500;
+  }
+
+  .entry li strong {
+    font-weight: 600;
+  }
+
   .entry ul {
     margin: 0.35em 0 0;
     padding-left: 1.1em;
@@ -346,7 +379,7 @@ const { name, headline, location, contacts, summary, experience, education, skil
   }
 
   .entry li + li {
-    margin-top: 0.2em;
+    margin-top: 0.12em;
   }
 
   .skills {
@@ -403,7 +436,7 @@ const { name, headline, location, contacts, summary, experience, education, skil
     .sheet {
       width: 8.5in;
       min-height: 11in;
-      padding: 0.6in 0.65in;
+      padding: 0.5in 0.6in;
       border-radius: 0;
       box-shadow: none;
     }
