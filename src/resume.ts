@@ -1,7 +1,7 @@
 /**
  * Résumé content for /resume and the downloadable PDF.
- * PLACEHOLDER: everything marked TODO below is template text. The facts (name,
- * Alan, Waterloo 2020, links) are real; dates and bullets need your details.
+ * Bullets may use **bold** for the key result. Entries marked TODO still need
+ * details; empty strings are hidden.
  */
 import { SITE } from './site.config';
 
@@ -15,55 +15,97 @@ export interface Role {
   bullets: string[];
 }
 
+export interface Education {
+  school: string;
+  degree: string;
+  location: string;
+  end?: string;
+}
+
+/** Projects that only appear on the résumé. Featured, non-placeholder projects from src/content/projects are listed first. */
+export interface ResumeProject {
+  title: string;
+  description: string;
+  year?: string;
+  bullets: string[];
+}
+
 export const RESUME = {
   name: SITE.name,
   headline: 'Software Engineer',
-  location: 'Paris, France', // TODO: confirm, or leave out
+  location: 'Paris, France', // TODO: confirm, or leave empty
   contacts: [
     { label: 'andre-chen.com', href: SITE.url },
     { label: 'github.com/cdd741', href: SITE.links.github },
     { label: 'linkedin.com/in/andre-baizhou-chen', href: SITE.links.linkedin },
   ],
-  // TODO: one or two lines on what you do and what you care about.
-  summary:
-    'Software engineer who likes turning messy real-world problems into simple, well-crafted products. Two or three lines about your focus and strengths go here.',
+  summary: '',
   experience: [
     {
       company: 'Alan',
       url: 'https://alan.com',
       role: 'Software Engineer',
-      location: 'Paris, France',
-      start: '20XX', // TODO
+      location: '', // PLACEHOLDER: city
+      start: '20XX', // PLACEHOLDER: start date
       end: 'Present',
+      bullets: [], // PLACEHOLDER: what you work on at Alan
+    },
+    {
+      company: 'AlgoAce',
+      role: 'Full-Stack Engineer',
+      location: 'Toronto, ON',
+      start: 'Nov 2022',
+      end: 'Present', // TODO: end date, now that you're at Alan?
       bullets: [
-        // TODO: real achievements, ideally with numbers.
-        'Describe something you shipped and the difference it made, with a number if you have one.',
-        'Describe a system you own or improved: what it does, its scale, what you changed.',
-        'Describe how you work with others: mentoring, cross-team projects, reviews.',
+        'Architected a scalable e-learning platform with **React (WebSockets), Python/Flask, JWT auth and SQLite**.',
+        'Engineered an **AI Tutor** (ChatGPT API, custom prompt pipelines) that **cut manual grading time by 50%**.',
+        'Developed a **CCC/USACO curriculum** with algorithm visualizers (e.g. Dijkstra): **30% national award rate**.',
+        'Automated testing and deployment with GitHub Actions, **reducing release time by 30%**.',
       ],
     },
     {
-      company: 'Previous company', // TODO
-      role: 'Software Engineer Intern',
-      location: 'City, Country',
-      start: '20XX',
-      end: '20XX',
-      bullets: ['What you built there and why it mattered.', 'Technologies you used, and one result worth mentioning.'],
+      company: 'Faire',
+      url: 'https://www.faire.com',
+      role: 'Software Engineer',
+      location: 'Waterloo, ON',
+      start: 'Jul 2021',
+      end: 'Jun 2022',
+      bullets: [
+        'Launched the **European Membership Program**: **60% adoption** and **70% GMV penetration** in 7 days.',
+        'Redesigned purchasing and returns for **130K+ food retailers** with perishable-goods logic: **satisfaction +40%**.',
+        'Reached **99% email rendering consistency** across Gmail, Outlook and Apple Mail by refactoring to MJML.',
+        'Partnered with UX designers on interfaces that **cut support tickets by 20%**.',
+        'React/TypeScript (MobX, Styled Components), Kotlin APIs, MJML emails; AWS S3 for storage, hosting, backups.',
+      ],
     },
   ] satisfies Role[],
+  projects: [
+    {
+      title: 'Agent System',
+      description: 'AI agent search and collaboration platform',
+      bullets: [
+        'An open agent marketplace: natural-language agent search, a personalized assistant (OpenAI Agents SDK), agent registration and dynamic invocation.',
+        'Integrated **MCP, MCP-UI and A2A** for multi-agent communication; React + FastAPI for orchestration and embedding retrieval.',
+      ],
+    },
+  ] as ResumeProject[],
   education: [
     {
       school: 'University of Waterloo',
-      degree: 'Bachelor of Mathematics',
-      location: 'Waterloo, ON, Canada',
+      degree: 'Bachelor of Mathematics, Honours',
+      location: 'Waterloo, ON',
       end: '2020',
     },
-  ],
-  // TODO: trim to what you actually want to be hired for.
+    {
+      school: 'BrainStation',
+      degree: 'Web Development Diploma',
+      location: 'Toronto, ON',
+    },
+  ] satisfies Education[],
   skills: [
-    { label: 'Languages', items: ['TypeScript', 'Python', 'SQL'] },
-    { label: 'Frameworks', items: ['React', 'Node.js', 'Astro'] },
-    { label: 'Tools', items: ['PostgreSQL', 'Docker', 'Git', 'CI/CD'] },
+    { label: 'Frontend', items: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'responsive design'] },
+    { label: 'Backend', items: ['Python', 'Java', 'Kotlin', 'SQL', 'NoSQL'] },
+    { label: 'Tooling', items: ['Docker', 'Git', 'GitHub Actions', 'Jenkins', 'Cypress', 'Storybook', 'Datadog', 'Mode', 'Jira'] },
   ],
 };
 
