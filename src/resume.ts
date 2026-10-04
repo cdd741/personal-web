@@ -48,13 +48,16 @@ export const RESUME = {
       location: '',
       start: 'Jan 2026',
       end: 'Present',
-      bullets: [], // PLACEHOLDER: add 2–4 bullets on your work at Alan
+      bullets: [
+        'Engineer on the **Canada crew**, building Alan\'s health insurance product for the Canadian market.',
+        // PLACEHOLDER: add 1–3 more bullets on your work at Alan
+      ],
     },
     {
       company: 'AlgoAce',
       role: 'Full-Stack Engineer',
       location: 'Toronto, ON',
-      start: 'Nov 2022',
+      start: '2023',
       end: '2025',
       bullets: [
         'Architected a scalable e-learning platform with **React (WebSockets), Python/Flask, JWT auth and SQLite**.',
@@ -68,8 +71,8 @@ export const RESUME = {
       url: 'https://www.faire.com',
       role: 'Software Engineer',
       location: 'Waterloo, ON',
-      start: 'Jul 2021',
-      end: 'Jun 2022',
+      start: '2021',
+      end: '2022',
       bullets: [
         'Launched the **European Membership Program**: **60% adoption** and **70% GMV penetration** in 7 days.',
         'Redesigned purchasing and returns for **130K+ food retailers** with perishable-goods logic: **satisfaction +40%**.',
