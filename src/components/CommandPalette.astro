@@ -7,11 +7,12 @@ const posts = await getPosts();
 /** Static part of the command list; behaviours are attached in the client script by `action`. */
 const items = [
   { group: 'Go to', label: 'Home', href: '/', keywords: 'index start' },
-  ...NAV.map(({ href, label }) => ({ group: 'Go to', label, href, keywords: label === 'Play' ? 'game dino rex' : '' })),
+  ...NAV.map(({ href, label }) => ({ group: 'Go to', label, href, keywords: label === 'Play' ? 'game dino rex' : label === 'Work' ? 'experience cv resume jobs' : '' })),
   ...posts.map((p) => ({ group: 'Writing', label: p.data.title, href: `/writing/${p.id}/`, keywords: p.data.tags.join(' ') })),
   { group: 'Links', label: 'GitHub', href: SITE.links.github, keywords: 'code source repos' },
   ...(SITE.links.linkedin ? [{ group: 'Links', label: 'LinkedIn', href: SITE.links.linkedin, keywords: 'cv resume work' }] : []),
   { group: 'Links', label: 'Download résumé (PDF)', href: '/andre-chen-resume.pdf', keywords: 'cv resume pdf' },
+  { group: 'Links', label: 'Résumé (one page)', href: '/resume/', keywords: 'cv resume print' },
   { group: 'Links', label: 'RSS feed', href: '/rss.xml', keywords: 'subscribe feed' },
   { group: 'Links', label: 'View this site’s source', href: 'https://github.com/cdd741/personal-web', keywords: 'code astro' },
   { group: 'Preferences', label: 'Toggle dark mode', action: 'theme-toggle', keywords: 'theme light dark night' },

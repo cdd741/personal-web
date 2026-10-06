@@ -45,9 +45,9 @@ export const SITE = {
 export const SHOW_DRAFTS = import.meta.env.DEV || import.meta.env.SHOW_DRAFTS === 'true';
 
 export const NAV = [
+  { href: '/work/', label: 'Work' },
   { href: '/projects/', label: 'Projects' },
   { href: '/writing/', label: 'Writing' },
   { href: '/about/', label: 'About' },
   { href: '/play/', label: 'Play' },
-  { href: '/resume/', label: 'Résumé' },
 ] as const;

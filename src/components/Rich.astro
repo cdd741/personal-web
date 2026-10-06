@@ -1,0 +1,7 @@
+---
+/** Renders text with **bold** spans, as used in résumé bullets. */
+const { text } = Astro.props as { text: string };
+const parts = text.split(/\*\*(.+?)\*\*/);
+---
+
+{parts.map((part, i) => (i % 2 ? <strong>{part}</strong> : part))}
