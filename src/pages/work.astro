@@ -1,0 +1,393 @@
+---
+import Base from '../layouts/Base.astro';
+import Rich from '../components/Rich.astro';
+import { getProjects } from '../lib';
+import { RESUME, RESUME_PDF } from '../resume';
+import { SITE } from '../site.config';
+import { tagStyle } from '../tag-color';
+
+const { experience, projects, education, skills } = RESUME;
+// Real, featured projects from the projects page; placeholders stay off.
+const featured = (await getProjects()).filter((p) => p.data.featured && !p.data.placeholder);
+const [current, ...previous] = experience;
+---
+
+<Base title="Work" description={`${SITE.name}'s experience and projects. The résumé is also available as a PDF.`}>
+  <div class="container">
+    <header class="page-head">
+      <h1>Work</h1>
+      <p>
+        {current.role} at <a href={current.url}>{current.company}</a>.{previous.length > 0 && ` Before that, ${previous.map((j) => j.company).join(' and ')}.`}
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href={RESUME_PDF} download>Download résumé ↓</a>
+        <a class="btn" href="/resume/">One-page view</a>
+      </div>
+    </header>
+
+    <section class="section" aria-labelledby="experience">
+      <h2 class="section-title" id="experience"><span>Experience</span></h2>
+      <ol class="timeline">
+        {
+          experience.map((job, i) => {
+            const points = job.details ?? job.bullets;
+            return (
+              <li class:list={['role', { current: i === 0 && job.end === 'Present' }]}>
+                <p class="when mono">
+                  {job.start} – {job.end}
+                </p>
+                <div class="body">
+                  <h3>
+                    {job.role}{' '}
+                    <span class="at">
+                      at {job.url ? <a href={job.url}>{job.company}</a> : job.company}
+                    </span>
+                  </h3>
+                  {job.location && <p class="where">{job.location}</p>}
+                  {points.length > 0 && (
+                    <ul class="points">
+                      {points.map((b) => (
+                        <li>
+                          <Rich text={b} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {job.stack && (
+                    <p class="stack">
+                      {job.stack.map((t) => (
+                        <span class="badge badge-tag" style={tagStyle(t)}>
+                          {t}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })
+        }
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="projects">
+      <h2 class="section-title" id="projects"><span>Selected projects</span><a href="/projects/">All projects →</a></h2>
+      <div class="projects">
+        {
+          featured.map(({ data }) => (
+            <article class="project">
+              <h3>
+                {(data.url ?? data.repo) ? <a href={data.url ?? data.repo}>{data.title}</a> : data.title}
+                <span class="when mono">{data.year}</span>
+              </h3>
+              {data.awards[0] && <p class="awards"><span class="badge badge-award">{data.awards[0]}</span></p>}
+              <p class="muted">{data.description}</p>
+              <p class="stack">
+                {data.tags.map((t) => (
+                  <span class="badge badge-tag" style={tagStyle(t)}>
+                    {t}
+                  </span>
+                ))}
+              </p>
+            </article>
+          ))
+        }
+        {
+          projects.map((p) => (
+            <article class="project">
+              <h3>
+                {p.title}
+                {p.year && <span class="when mono">{p.year}</span>}
+              </h3>
+              <p class="muted">{p.description}</p>
+              <ul class="points">
+                {(p.details ?? p.bullets).map((b) => (
+                  <li>
+                    <Rich text={b} />
+                  </li>
+                ))}
+              </ul>
+              {p.stack && (
+                <p class="stack">
+                  {p.stack.map((t) => (
+                    <span class="badge badge-tag" style={tagStyle(t)}>
+                      {t}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="education">
+      <h2 class="section-title" id="education"><span>Education</span></h2>
+      <dl class="rows">
+        {
+          education.map((ed) => (
+            <div>
+              <dt class="mono">{ed.end ?? ''}</dt>
+              <dd>
+                <strong>{ed.degree}</strong>
+                <span class="muted">
+                  {' · '}
+                  {ed.school}, {ed.location}
+                </span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <section class="section" aria-labelledby="skills">
+      <h2 class="section-title" id="skills"><span>Skills</span></h2>
+      <dl class="rows">
+        {
+          skills.map((s) => (
+            <div>
+              <dt>{s.label}</dt>
+              <dd>{s.items.join(' · ')}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page-head p a {
+    color: inherit;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.5rem;
+  }
+
+  .mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+
+  .when {
+    font-size: 0.8rem;
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- timeline: a light trail runs down the left, one lamp per role ---------- */
+  .timeline {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8.5rem;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(var(--c-red), var(--c-amber) 40%, color-mix(in oklab, var(--c-violet) 40%, transparent));
+    opacity: 0.55;
+  }
+
+  .role {
+    position: relative;
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 2rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .role:last-child {
+    padding-bottom: 0;
+  }
+
+  .role::before {
+    content: '';
+    position: absolute;
+    left: calc(8.5rem - 4px);
+    top: 0.45rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--c-amber);
+    box-shadow: 0 0 0 3px var(--bg), 0 0 12px 2px color-mix(in oklab, var(--c-amber) 70%, transparent);
+  }
+
+  .role.current::before {
+    background: var(--c-red);
+    box-shadow: 0 0 0 3px var(--bg), 0 0 14px 3px color-mix(in oklab, var(--c-red) 70%, transparent);
+    animation: lamp 2.4s ease-in-out infinite;
+  }
+
+  @keyframes lamp {
+    50% {
+      box-shadow: 0 0 0 3px var(--bg), 0 0 22px 6px color-mix(in oklab, var(--c-red) 55%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .role.current::before {
+      animation: none;
+    }
+  }
+
+  .role .when {
+    margin: 0.2rem 0 0;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .body h3,
+  .project h3 {
+    margin: 0;
+    font-size: var(--step-1);
+    letter-spacing: -0.01em;
+  }
+
+  .at {
+    font-weight: 400;
+    color: var(--fg-muted);
+  }
+
+  .where {
+    margin: 0.15rem 0 0;
+    font-size: var(--step--1);
+    color: var(--fg-faint);
+  }
+
+  .points {
+    margin: 0.75rem 0 0;
+    padding-left: 1.1rem;
+    list-style: disc;
+  }
+
+  .points li {
+    padding-left: 0.2rem;
+    line-height: 1.6;
+  }
+
+  .points li + li {
+    margin-top: 0.4rem;
+  }
+
+  .points li::marker {
+    color: var(--c-amber);
+  }
+
+  .points strong {
+    font-weight: 600;
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.9rem 0 0;
+  }
+
+  /* ---------- projects ---------- */
+  .projects {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .project {
+    padding: 1.25rem 1.35rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+  }
+
+  .project h3 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .project h3 a {
+    text-decoration: none;
+  }
+
+  .project .awards {
+    margin: 0.5rem 0 0;
+  }
+
+  .project > .muted {
+    margin: 0.4rem 0 0;
+  }
+
+  /* ---------- education, skills ---------- */
+  .rows {
+    display: grid;
+    margin: 0;
+  }
+
+  .rows > div {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 2rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .rows > div:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rows dt {
+    text-align: right;
+    color: var(--fg-faint);
+    font-size: var(--step--1);
+    padding-top: 0.1rem;
+  }
+
+  .rows dd {
+    margin: 0;
+  }
+
+  @media (max-width: 560px) {
+    .timeline::before {
+      left: 4px;
+    }
+
+    .role {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+      padding-left: 1.6rem;
+    }
+
+    .role::before {
+      left: 0;
+    }
+
+    .role .when {
+      text-align: left;
+      margin: 0;
+    }
+
+    .rows > div {
+      grid-template-columns: 1fr;
+      gap: 0.15rem;
+    }
+
+    .rows dt {
+      text-align: left;
+    }
+
+    .rows dt:empty {
+      display: none;
+    }
+  }
+</style>

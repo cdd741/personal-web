@@ -1,21 +1,19 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getProjects } from '../lib';
+import Rich from '../components/Rich.astro';
 import { RESUME, RESUME_PDF } from '../resume';
 
 // Real, featured projects from the projects page; placeholders stay off the résumé.
 const featured = (await getProjects()).filter((p) => p.data.featured && !p.data.placeholder).slice(0, 2);
 const { name, headline, location, contacts, summary, experience, projects, education, skills } = RESUME;
-
-/** Splits "a **b** c" into ["a ", "b", " c"]; odd indices are bold. */
-const rich = (text: string) => text.split(/\*\*(.+?)\*\*/);
 ---
 
 <Base title="Résumé" description={`${name}: ${headline}. One-page résumé, also available as a PDF.`}>
   <div class="container-wide toolbar">
     <div>
       <h1>Résumé</h1>
-      <p class="muted">One page. Also as a PDF, sized for US Letter.</p>
+      <p class="muted">The one-page version, as a PDF for US Letter. The full story is on <a href="/work/">Work</a>.</p>
     </div>
     <div class="actions">
       <a class="btn btn-primary" href={RESUME_PDF} download data-download>Download PDF ↓</a>
@@ -64,7 +62,7 @@ const rich = (text: string) => text.split(/\*\*(.+?)\*\*/);
               {job.bullets.length > 0 && (
                 <ul>
                   {job.bullets.map((b) => (
-                    <li>{rich(b).map((part, i) => (i % 2 ? <strong>{part}</strong> : part))}</li>
+                    <li><Rich text={b} /></li>
                   ))}
                 </ul>
               )}
@@ -102,7 +100,7 @@ const rich = (text: string) => text.split(/\*\*(.+?)\*\*/);
                 </div>
                 <ul>
                   {p.bullets.map((b) => (
-                    <li>{rich(b).map((part, i) => (i % 2 ? <strong>{part}</strong> : part))}</li>
+                    <li><Rich text={b} /></li>
                   ))}
                 </ul>
               </div>
@@ -188,40 +186,6 @@ const rich = (text: string) => text.split(/\*\*(.+?)\*\*/);
   .actions {
     display: flex;
     gap: 0.6rem;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.55rem 1.1rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 999px;
-    background: var(--bg-raised);
-    color: var(--fg);
-    font-size: 0.9rem;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    transition:
-      transform 0.2s var(--ease-out),
-      box-shadow 0.2s;
-  }
-
-  .btn:hover {
-    color: var(--fg);
-    transform: translateY(-1px);
-  }
-
-  .btn-primary {
-    border-color: transparent;
-    background: var(--trail);
-    color: #fff;
-    box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--c-red) 70%, transparent);
-  }
-
-  .btn-primary:hover {
-    color: #fff;
-    box-shadow: 0 12px 30px -10px color-mix(in oklab, var(--c-red) 85%, transparent);
   }
 
   .sheet-wrap {

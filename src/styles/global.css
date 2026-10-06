@@ -353,6 +353,41 @@ button {
   border-color: var(--accent);
 }
 
+/* ---------- buttons (résumé, work) ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s;
+}
+
+.btn:hover {
+  color: var(--fg);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--trail);
+  color: #fff;
+  box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--c-red) 70%, transparent);
+}
+
+.btn-primary:hover {
+  color: #fff;
+  box-shadow: 0 12px 30px -10px color-mix(in oklab, var(--c-red) 85%, transparent);
+}
+
 /* ---------- cards (home grid) ---------- */
 .card {
   position: relative;

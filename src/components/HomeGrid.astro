@@ -3,6 +3,7 @@ import Contributions from './Contributions.astro';
 import FormattedDate from './FormattedDate.astro';
 import PixelSprite from './PixelSprite.astro';
 import { getPosts, getProjects } from '../lib';
+import { RESUME } from '../resume';
 import { REX_STAND } from '../scripts/sprites';
 import { SITE } from '../site.config';
 import { tagStyle } from '../tag-color';
@@ -82,13 +83,13 @@ const DEFAULT_SLIDER = 72;
     )
   }
 
-  <!-- Résumé -->
+  <!-- Work -->
   <div class="card resume" style="--c: var(--c-red)">
-    <p class="kicker">Résumé</p>
-    <p class="resume-line">One page, always up to date.</p>
+    <p class="kicker">Work</p>
+    <p class="resume-line">{RESUME.experience.map((j) => j.company).join(' · ')}</p>
     <p class="resume-actions">
-      <a class="stretch" href="/resume/">View</a>
-      <a class="pill" href="/andre-chen-resume.pdf" download>PDF ↓</a>
+      <a class="stretch" href="/work/">View</a>
+      <a class="pill" href="/andre-chen-resume.pdf" download>Résumé ↓</a>
     </p>
   </div>
 

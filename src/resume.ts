@@ -1,7 +1,10 @@
 /**
- * Résumé content for /resume and the downloadable PDF.
- * Bullets may use **bold** for the key result. Entries marked TODO still need
- * details; empty strings are hidden.
+ * Experience content for /work (the full story) and /resume (the one-page sheet
+ * the PDF is rendered from).
+ * - `bullets` are trimmed to fit the one-page résumé.
+ * - `details` are the full versions shown on /work; they fall back to `bullets`.
+ * - `stack` is shown as tags on /work.
+ * Text may use **bold** for the key result. Empty strings are hidden.
  */
 import { SITE } from './site.config';
 
@@ -13,6 +16,8 @@ export interface Role {
   start: string;
   end: string;
   bullets: string[];
+  details?: string[];
+  stack?: string[];
 }
 
 export interface Education {
@@ -28,6 +33,8 @@ export interface ResumeProject {
   description: string;
   year?: string;
   bullets: string[];
+  details?: string[];
+  stack?: string[];
 }
 
 export const RESUME = {
@@ -65,6 +72,13 @@ export const RESUME = {
         'Developed a **CCC/USACO curriculum** with algorithm visualizers (e.g. Dijkstra): **30% national award rate**.',
         'Automated testing and deployment with GitHub Actions, **reducing release time by 30%**.',
       ],
+      details: [
+        'Architected and deployed a scalable e-learning platform with **React (WebSockets), Python/Flask, JWT auth and SQLite**.',
+        'Engineered an **AI Tutor** integrating the ChatGPT API with custom prompt pipelines, automating feedback generation and **reducing manual grading time by 50%**.',
+        'Developed a **competition curriculum** with algorithm visualizers (e.g. a Dijkstra simulator) for CCC/USACO, with a **30% national award rate**.',
+        'Automated testing and deployment with GitHub Actions, **reducing release time by 30%**.',
+      ],
+      stack: ['React', 'WebSockets', 'Python', 'Flask', 'JWT', 'SQLite', 'ChatGPT API', 'GitHub Actions'],
     },
     {
       company: 'Faire',
@@ -80,6 +94,15 @@ export const RESUME = {
         'Partnered with UX designers on interfaces that **cut support tickets by 20%**.',
         'React/TypeScript (MobX, Styled Components), Kotlin APIs, MJML emails; AWS S3 for storage, hosting, backups.',
       ],
+      details: [
+        '**Launched the European Membership Program**: **60% adoption** and **70% GMV penetration** in 7 days, with localized checkout and promotions.',
+        '**Redesigned purchasing and returns** for 130K+ food retailers, **boosting satisfaction 40%** with perishable-goods logic.',
+        'Achieved **99% email rendering consistency** across Gmail, Outlook and Apple Mail by refactoring templates in MJML.',
+        'Partnered with UX designers on feature implementation, and **cut support tickets by 20%** through more intuitive interfaces.',
+        'Built React/TypeScript components (MobX, Styled Components), MJML email templates (React Query) and backend APIs in Kotlin.',
+        'Used AWS S3 for object storage, static website hosting and automated data backups.',
+      ],
+      stack: ['React', 'TypeScript', 'MobX', 'Styled Components', 'React Query', 'MJML', 'Kotlin', 'AWS S3'],
     },
   ] satisfies Role[],
   projects: [
@@ -90,6 +113,13 @@ export const RESUME = {
         'An open agent marketplace: natural-language agent search, a personalized assistant (OpenAI Agents SDK), agent registration and dynamic invocation.',
         'Integrated **MCP, MCP-UI and A2A** for multi-agent communication; React + FastAPI for orchestration and embedding retrieval.',
       ],
+      details: [
+        'Designed and developed an AI agent ecosystem: a natural-language agent search engine and a personalized assistant system built on the OpenAI Agents SDK.',
+        'Integrated the **MCP, MCP-UI and A2A** protocols for standardized multi-agent communication.',
+        'Implemented agent registration, metadata indexing and dynamic invocation to create an open agent marketplace.',
+        'Architected the full stack: a React frontend and a FastAPI backend for agent orchestration and embedding retrieval.',
+      ],
+      stack: ['OpenAI Agents SDK', 'MCP', 'MCP-UI', 'A2A', 'React', 'FastAPI'],
     },
   ] as ResumeProject[],
   education: [
