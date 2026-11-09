@@ -46,8 +46,7 @@ export const RESUME = {
     { label: 'github.com/cdd741', href: SITE.links.github },
     { label: 'linkedin.com/in/andre-baizhou-chen', href: SITE.links.linkedin },
   ],
-  summary:
-    'Full-stack engineer who builds AI products end to end, from agent platforms to voice apps.',
+  summary: '',
   experience: [
     {
       company: 'Alan',
