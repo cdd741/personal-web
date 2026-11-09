@@ -10,8 +10,8 @@ links:
 awards:
   - '🏆 1st place — ElevenHacks Hack #3: Replit'
   - Viral
-team: Team of 2
-# TODO(andre): add your role, e.g. role: "<what you built>"
+team: Team of 3
+role: Software and product design
 tags:
   - ElevenLabs Voice Design API
   - ElevenLabs Text-to-Speech v3

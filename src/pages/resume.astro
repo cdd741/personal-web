@@ -80,6 +80,7 @@ const { name, headline, location, contacts, summary, experience, projects, educa
                 <div class="entry-head">
                   <p>
                     <strong>{(data.url ?? data.repo) ? <a href={data.url ?? data.repo}>{data.title}</a> : data.title}</strong>
+                    {data.role && <span> · {data.role}</span>}
                     {data.awards[0] && <span class="award"> · {data.awards[0]}</span>}
                     {' · '}
                     <span class="soft">{data.description}</span>
