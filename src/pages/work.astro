@@ -82,6 +82,7 @@ const [current, ...previous] = experience;
               </h3>
               {data.awards[0] && <p class="awards"><span class="badge badge-award">{data.awards[0]}</span></p>}
               <p class="muted">{data.description}</p>
+              {(data.role || data.team) && <p class="credit">{[data.role, data.team].filter(Boolean).join(' · ')}</p>}
               <p class="stack">
                 {data.tags.map((t) => (
                   <span class="badge badge-tag" style={tagStyle(t)}>
@@ -322,6 +323,12 @@ const [current, ...previous] = experience;
 
   .project .awards {
     margin: 0.5rem 0 0;
+  }
+
+  .project > .credit {
+    margin: 0.4rem 0 0;
+    font-size: var(--step--1);
+    font-weight: 500;
   }
 
   .project > .muted {

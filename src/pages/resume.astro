@@ -83,6 +83,7 @@ const { name, headline, location, contacts, summary, experience, projects, educa
                     {data.awards[0] && <span class="award"> · {data.awards[0]}</span>}
                     {' · '}
                     <span class="soft">{data.description}</span>
+                    {data.role && <span class="credit"> {data.role}.</span>}
                   </p>
                   <p class="when">{data.year}</p>
                 </div>
@@ -318,6 +319,10 @@ const { name, headline, location, contacts, summary, experience, projects, educa
 
   .soft {
     color: var(--ink-soft);
+  }
+
+  .credit {
+    font-weight: 500;
   }
 
   .award {
