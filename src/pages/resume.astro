@@ -82,11 +82,10 @@ const { name, headline, location, contacts, summary, experience, projects, educa
                     <strong>{(data.url ?? data.repo) ? <a href={data.url ?? data.repo}>{data.title}</a> : data.title}</strong>
                     {data.role && <span> · {data.role}</span>}
                     {data.awards[0] && <span class="award"> · {data.awards[0]}</span>}
-                    {' · '}
-                    <span class="soft">{data.description}</span>
                   </p>
                   <p class="when">{data.year}</p>
                 </div>
+                <p class="soft desc">{data.description}</p>
               </div>
             ))}
             {projects.map((p) => (
@@ -319,6 +318,10 @@ const { name, headline, location, contacts, summary, experience, projects, educa
 
   .soft {
     color: var(--ink-soft);
+  }
+
+  .desc {
+    margin-top: 0.15em !important;
   }
 
   .award {
