@@ -57,12 +57,13 @@ export const RESUME = {
       start: '2026',
       end: 'Present',
       bullets: [
+        'Joined the **Canada Expansion** crew in its first full year; membership has **more than tripled** since.',
         'Led the move of Canada\'s health plans onto Alan\'s **global plan catalog**, with tools to manage them.',
         'Led the **benefit-plan upload automation** for our claims adjudicator, mapping coverage onto its claim codes.',
         'Bringing **life and disability insurance in-house**: participation, amendments, renewals, benefit summaries.',
       ],
       details: [
-        'Software engineer on the **Canada Expansion** crew, building Alan\'s health insurance product for Canadian companies.',
+        'Joined the **Canada Expansion** crew in its first full year, building Alan\'s health insurance product for Canadian companies; membership has **more than tripled** since.',
         'Led the migration of Canadian health plans onto Alan\'s **global insurance plan catalog**, backfilling every existing plan and building the internal tools to browse and manage them.',
         'Led the **automation of benefit-plan uploads** to our claims adjudication partner: mapped catalog coverage onto the partner\'s claim-code hierarchy, validated it against production plan exports, and replaced a manual setup with a generated file.',
         'Building the core flows for bringing **life and disability insurance in-house**: per-module employer participation, contract amendments and renewals, e-signature, and generated benefit summaries.',
