@@ -46,7 +46,8 @@ export const RESUME = {
     { label: 'github.com/cdd741', href: SITE.links.github },
     { label: 'linkedin.com/in/andre-baizhou-chen', href: SITE.links.linkedin },
   ],
-  summary: '',
+  summary:
+    'Full-stack engineer who builds AI products end to end, from agent platforms to voice apps.',
   experience: [
     {
       company: 'Alan',
@@ -56,9 +57,18 @@ export const RESUME = {
       start: '2026',
       end: 'Present',
       bullets: [
-        'Engineer on the **Canada crew**, building Alan\'s health insurance product for the Canadian market.',
-        // PLACEHOLDER: add 1–3 more bullets on your work at Alan
+        'Led the move of Canada\'s health plans onto Alan\'s **global plan catalog**, with tools to manage them.',
+        'Led the **benefit-plan upload automation** for our claims adjudicator, mapping coverage onto its claim codes.',
+        'Bringing **life and disability insurance in-house**: participation, amendments, renewals, benefit summaries.',
       ],
+      details: [
+        'Software engineer on the **Canada Expansion** crew, building Alan\'s health insurance product for Canadian companies.',
+        'Led the migration of Canadian health plans onto Alan\'s **global insurance plan catalog**, backfilling every existing plan and building the internal tools to browse and manage them.',
+        'Led the **automation of benefit-plan uploads** to our claims adjudication partner: mapped catalog coverage onto the partner\'s claim-code hierarchy, validated it against production plan exports, and replaced a manual setup with a generated file.',
+        'Building the core flows for bringing **life and disability insurance in-house**: per-module employer participation, contract amendments and renewals, e-signature, and generated benefit summaries.',
+        'Regular on-call rotations: triaging production errors and accessibility alerts, and wiring an **AI agent to auto-investigate** new Sentry issues.',
+      ],
+      stack: ['Python', 'TypeScript', 'React', 'Sentry'],
     },
     {
       company: 'AlgoAce',
@@ -92,7 +102,6 @@ export const RESUME = {
         'Redesigned purchasing and returns for **130K+ food retailers** with perishable-goods logic: **satisfaction +40%**.',
         'Reached **99% email rendering consistency** across Gmail, Outlook and Apple Mail by refactoring to MJML.',
         'Partnered with UX designers on interfaces that **cut support tickets by 20%**.',
-        'React/TypeScript (MobX, Styled Components), Kotlin APIs, MJML emails; AWS S3 for storage, hosting, backups.',
       ],
       details: [
         '**Launched the European Membership Program**: **60% adoption** and **70% GMV penetration** in 7 days, with localized checkout and promotions.',
@@ -136,9 +145,10 @@ export const RESUME = {
     },
   ] satisfies Education[],
   skills: [
-    { label: 'Frontend', items: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'responsive design'] },
-    { label: 'Backend', items: ['Python', 'Java', 'Kotlin', 'SQL', 'NoSQL'] },
-    { label: 'Tooling', items: ['Docker', 'Git', 'GitHub Actions', 'Jenkins', 'Cypress', 'Storybook', 'Datadog', 'Mode', 'Jira'] },
+    { label: 'AI', items: ['LLM APIs (OpenAI, ElevenLabs)', 'OpenAI Agents SDK', 'MCP / A2A', 'prompt pipelines'] },
+    { label: 'Backend', items: ['Python (Flask, FastAPI)', 'Kotlin', 'Java', 'SQL / NoSQL'] },
+    { label: 'Frontend', items: ['React', 'TypeScript', 'React Native (Expo)'] },
+    { label: 'Tooling', items: ['Docker', 'GitHub Actions', 'AWS S3', 'Cypress', 'Storybook', 'Datadog'] },
   ],
 };
 
