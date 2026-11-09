@@ -10,7 +10,7 @@ links:
 awards:
   - '🏆 1st place — ElevenHacks Hack #3: Replit'
   - Viral
-team: Team of 2
+team: Team of 3
 role: Software and product design
 tags:
   - ElevenLabs Voice Design API
