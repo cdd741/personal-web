@@ -1,8 +1,10 @@
 // Checks the home page's scroll scenes in the built site (run after `npm run build`).
 // It scrolls the whole page in small steps at several window sizes and fails if
 //   1. two scenes show content in the same place at the same time, or
-//   2. a pinned scene's content spills outside the screen.
-// Both happen when a scene's content outgrows one screen or the scene timings drift.
+//   2. a pinned scene's content spills outside the screen, or
+//   3. opening a <details> in a scene (the heatmap's monthly totals) makes the scene
+//      shrink: a pinned scene has one screen, so what opens must open in place.
+// The first two happen when a scene's content outgrows one screen or the scene timings drift.
 // Uses Playwright's Chromium; set CHROMIUM_PATH to use another binary.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -104,6 +106,24 @@ try {
         }
       }
     }
+    // 3. Open every <details> the way a visitor does, let the page re-measure as it does on
+    // a resize (a phone's address bar hiding is one), and compare each scene's fit scale.
+    const readFit = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('[data-scene]')].map((scene) => ({
+          name: scene.dataset.scene,
+          fit: Number(scene.querySelector('[data-stage]')?.style.getPropertyValue('--fit') || 1),
+        })),
+      );
+    const before = await readFit();
+    for (const summary of await page.locator('[data-scene] details > summary').all()) await summary.dispatchEvent('click');
+    await page.evaluate(() => dispatchEvent(new Event('resize')));
+    await page.waitForTimeout(100);
+    for (const [i, scene] of (await readFit()).entries()) {
+      if (scene.fit < before[i].fit - 0.001) {
+        problems.push(`"${scene.name}" shrinks to ${Math.round(scene.fit * 100)}% (from ${Math.round(before[i].fit * 100)}%) when its details open`);
+      }
+    }
     console.log(`${width}x${height}: ${problems.length ? `${problems.length} problem(s)` : 'ok'}`);
     for (const line of problems.slice(0, 5)) console.log(`  ${line}`);
     failures += problems.length;
@@ -115,7 +135,7 @@ try {
 }
 
 if (failures) {
-  console.error('Home page scenes overlap or overflow. See src/scripts/dive/index.ts (scene timings) and Scene.astro (fit).');
+  console.error('Home page scenes overlap, overflow or shrink. See src/scripts/dive/index.ts (scene timings) and Scene.astro (fit).');
   process.exitCode = 1;
 } else {
   console.log('Home page scenes: no overlap, nothing off screen.');

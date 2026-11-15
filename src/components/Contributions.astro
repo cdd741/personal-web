@@ -149,7 +149,7 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
       </div>
       <p id="contrib-hint" class="sr-only">Focus the chart and use the arrow keys to read each day.</p>
 
-      <footer class="contrib-foot">
+      <footer class="contrib-foot" data-contrib-foot>
         <dl class="stats">
           <div>
             <dt>Longest streak</dt>
@@ -179,8 +179,9 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
         </div>
       </footer>
 
-      <details class="table-view">
+      <details class="table-view" data-table-view>
         <summary>Monthly totals · updated {updated}</summary>
+        <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -199,6 +200,7 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
             ))}
           </tbody>
         </table>
+        </div>
       </details>
     </article>
   )
@@ -291,6 +293,37 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     // The days light up column by column as the home page scrolls: scripts/dive sets
     // --sweep (0 → 1) on the chart and counts the total up with it. `armed` turns that on.
     svg.classList.add('armed');
+
+    // Monthly totals open in place of the chart and the stats instead of below them, so
+    // the card keeps its size: on the home page it sits in a pinned, one-screen scene with
+    // no room to grow. (Without this script the table simply opens below.)
+    const view = card.querySelector<HTMLDetailsElement>('[data-table-view]');
+    const foot = card.querySelector<HTMLElement>('[data-contrib-foot]');
+    if (view && foot) {
+      const place = () => {
+        card.style.setProperty('--swap-top', `${scroller.offsetTop}px`);
+        card.style.setProperty('--swap-left', `${scroller.offsetLeft}px`);
+        card.style.setProperty('--swap-width', `${scroller.offsetWidth}px`);
+        card.style.setProperty('--swap-height', `${foot.offsetTop + foot.offsetHeight - scroller.offsetTop}px`);
+      };
+      const sync = () => {
+        if (view.open) place();
+        card.classList.toggle('show-table', view.open);
+        // The table scrolls inside the card, so the keyboard needs a way in.
+        const wrap = view.querySelector<HTMLElement>('.table-wrap');
+        if (view.open) wrap?.setAttribute('tabindex', '0');
+        else wrap?.removeAttribute('tabindex');
+      };
+      // Swap in the same frame as the click, so the card never jumps to the taller layout.
+      view.querySelector('summary')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        view.open = !view.open;
+        sync();
+      });
+      // Anything else that opens it (find in page, for one).
+      view.addEventListener('toggle', sync);
+      new ResizeObserver(() => view.open && place()).observe(card);
+    }
   }
 </script>
 
@@ -304,6 +337,7 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     --lv3: #a45c00;
     --lv4: #693a00;
     gap: 1rem;
+    position: relative;
   }
 
   :global(:root[data-theme='dark']) .contrib,
@@ -523,6 +557,29 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
   .table-view summary {
     cursor: pointer;
     width: fit-content;
+  }
+
+  /* With the table open, it takes the place of the chart and the stats (see the script). */
+  .contrib.show-table .scroller,
+  .contrib.show-table .contrib-foot {
+    visibility: hidden;
+  }
+
+  .contrib.show-table .table-wrap {
+    position: absolute;
+    top: var(--swap-top);
+    left: var(--swap-left);
+    width: var(--swap-width);
+    height: var(--swap-height);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    /* The last rows fade out, which says there is more to scroll to. */
+    padding-bottom: 1.75rem;
+    mask-image: linear-gradient(#000 calc(100% - 1.75rem), transparent);
+  }
+
+  .contrib.show-table .table-wrap table {
+    margin-top: 0;
   }
 
   .table-view summary:hover {
