@@ -402,7 +402,8 @@ export function startDive(root: HTMLElement) {
     let ty = H / 2;
     let trx = W * 0.3;
     let tryy = H * 0.16;
-    let strength = 1;
+    // A scene with no text block to protect (the greeting) has no no-swim zone at all.
+    let strength = 0;
     const rect = active?.focus?.getBoundingClientRect();
     if (rect && rect.width > 0 && rect.bottom > 0 && rect.top < H) {
       // The zone is wider than the text because only a shark's snout is steered; its body trails behind.
@@ -454,6 +455,14 @@ export function startDive(root: HTMLElement) {
     renderScroll();
   };
 
+  // A click or tap drops bait (the engine handles the sharks and the splash); add some bubbles.
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!reduced.matches) bubbles.burst(e.clientX, e.clientY, 8);
+    },
+    { passive: true },
+  );
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onResize, { passive: true });
   window.addEventListener('load', onResize);

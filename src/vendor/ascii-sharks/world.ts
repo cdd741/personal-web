@@ -94,7 +94,10 @@ export class World {
   fish: Fish[] = [];
   sharks: Shark[] = [];
   events: WorldEvent[] = [];
-  pointer = { x: 0, y: 0, active: false };
+  /** Local change: `movedAt` is the world time of the last pointer move, so sharks lose interest in a cursor that sits still. */
+  pointer = { x: 0, y: 0, active: false, movedAt: -1e9 };
+  /** Local change: bait dropped by a click; every shark in the water races for it until one gets there. */
+  bait: { x: number; y: number; until: number } | null = null;
 
   // Local changes: knobs the page turns while it scrolls.
   /** A current, in px/s, that carries every fish (and nudges the sharks). Fish swept out one side come back in the other. */
@@ -241,8 +244,14 @@ export class World {
     }
   }
 
+  /** Local change: drops bait at a point (the page calls this on a click or tap). */
+  lure(x: number, y: number) {
+    this.bait = { x, y, until: this.time + 9 };
+  }
+
   step(dt: number) {
     this.time += dt;
+    if (this.bait && this.time >= this.bait.until) this.bait = null;
     this.aliveCount = 0;
     for (const f of this.fish) if (f.alive) this.aliveCount++;
     this.rebuildHash();
@@ -546,6 +555,54 @@ export class World {
       dx += Math.cos(sh.heading + sh.wander) * 0.45;
       dy += Math.sin(sh.heading + sh.wander) * 0.45;
 
+      // Local change: how much this shark cares about the visitor's cursor right now.
+      // Every shark in the frame notices a moving cursor, nearer ones more; interest
+      // fades once the cursor has been still for a few seconds.
+      let curious = 0;
+      /** The shark circles the cursor at this distance instead of running it over. */
+      const near = L * 0.45 + 50;
+      // From the snout to the spot the shark gathers at (the cursor, or beside the text).
+      let px = 0;
+      let py = 0;
+      let pd = 1;
+      if (this.pointer.active && !this.bait) {
+        // The text stays readable: a cursor on the text is ignored (the visitor is reading),
+        // and one at its edge gathers the sharks just outside the no-swim zone instead.
+        let gx = (this.pointer.x - cxW) / clearX;
+        let gy = (this.pointer.y - cyW) / clearY;
+        const ge = Math.hypot(gx, gy);
+        const guard = Math.min(1, this.clearStrength);
+        const keep = 1 + ((near * 1.3) / Math.min(clearX, clearY)) * guard;
+        if (ge < keep) {
+          // Near the middle of the zone the cursor has no side, so each shark keeps its own.
+          const sx = (hx - cxW) / clearX;
+          const sy = (hy - cyW) / clearY;
+          const se = Math.hypot(sx, sy) || 1;
+          const own = 0.5 * (1 - clamp(ge / 0.5, 0, 1));
+          const ux = gx + (sx / se) * own;
+          const uy = gy + (sy / se) * own;
+          const ue = Math.hypot(ux, uy) || 1;
+          gx = (ux / ue) * keep;
+          gy = (uy / ue) * keep;
+          // If that side has no room (text against an edge of the frame), use the opposite one.
+          const room = Math.min(near, minSide * 0.2);
+          const sideX = cxW + gx * clearX;
+          const sideY = cyW + gy * clearY;
+          if (sideX < room || sideX > W - room) gx = -gx;
+          if (sideY < room || sideY > H - room) gy = -gy;
+        }
+        px = clamp(cxW + gx * clearX, 0, W) - hx;
+        py = clamp(cyW + gy * clearY, 0, H) - hy;
+        pd = Math.hypot(px, py) || 1;
+        const interest = 1 - clamp((time - this.pointer.movedAt - 5) / 3, 0, 1);
+        curious = interest * (0.5 + 0.5 * clamp(1 - pd / Math.hypot(W, H), 0, 1));
+        // Inside the zone the pull fades, so the push out of it always wins.
+        const zx = (hx - cxW) / clearX;
+        const zy = (hy - cyW) / clearY;
+        curious *= 1 - guard * (1 - clamp(zx * zx + zy * zy, 0, 1));
+        curious *= 1 - guard * (1 - clamp((ge - 0.5) / 0.4, 0, 1));
+      }
+
       // Hunt.
       if (time >= sh.retargetAt) {
         sh.target = this.findPrey(sh);
@@ -559,7 +616,8 @@ export class World {
         const tx = t.x + t.vx * 0.35 - hx;
         const ty = t.y + t.vy * 0.35 - hy;
         const d = Math.hypot(tx, ty) || 1;
-        const w = 1.4 + 2.6 * sh.hunger;
+        // Local change: a curious shark is only half-heartedly hunting.
+        const w = (1.4 + 2.6 * sh.hunger) * (1 - 0.7 * curious);
         dx += (tx / d) * w;
         dy += (ty / d) * w;
         hunting = true;
@@ -573,6 +631,41 @@ export class World {
         const radial = clamp((radius - r) / radius, -1, 1);
         dx += ((-ry / r) * sh.orbitDir + (rx / r) * radial * 0.9) * 0.55;
         dy += ((rx / r) * sh.orbitDir + (ry / r) * radial * 0.9) * 0.55;
+      }
+
+      // Local change: the visitor's pointer.
+      let rushing = false;
+      /** 1 far from the bait, 0 on top of it: the shark brakes so it can turn onto it instead of orbiting. */
+      let baitRange = 1;
+      /** 1 far from the cursor, 0 once the shark is circling it. */
+      let cursorRange = 0;
+      const bait = this.bait;
+      if (bait) {
+        // Bait in the water beats everything else: straight at it, fast.
+        const bx = bait.x - hx;
+        const by = bait.y - hy;
+        const d = Math.hypot(bx, by) || 1;
+        dx += (bx / d) * 6;
+        dy += (by / d) * 6;
+        rushing = true;
+        baitRange = clamp(d / (L * 0.8), 0, 1);
+        if (d < L * 0.1 + 18) {
+          this.events.push({ kind: "eat", x: bait.x, y: bait.y });
+          this.bait = null;
+          sh.hunger = Math.max(0, sh.hunger - 0.3);
+        }
+      } else if (curious > 0) {
+        // Curiosity: swim over to the cursor, then circle it at about half a body
+        // length instead of running it over.
+        cursorRange = clamp((pd - near) / (L * 2), 0, 1);
+        if (pd > near) {
+          dx += (px / pd) * 4 * curious;
+          dy += (py / pd) * 4 * curious;
+        } else {
+          const push = 1 - pd / near;
+          dx += ((-py / pd) * sh.orbitDir * 2.4 - (px / pd) * 1.6 * push) * curious;
+          dy += ((px / pd) * sh.orbitDir * 2.4 - (py / pd) * 1.6 * push) * curious;
+        }
       }
 
       // Give other sharks room.
@@ -597,7 +690,7 @@ export class World {
       const e2 = ex * ex + ey * ey;
       if (e2 < 1) {
         const e = Math.sqrt(e2) || 1e-3;
-        const w = (1 - e) * (hunting ? 1 : 2.5) * this.clearStrength;
+        const w = (1 - e) * (hunting || rushing ? 1 : 2.5) * this.clearStrength;
         dx += (ex / e) * w;
         dy += (ey / e) * w;
       }
@@ -617,15 +710,19 @@ export class World {
 
       const desired = Math.atan2(dy, dx);
       // Sharks can't pivot on the spot: the turning circle grows with speed.
-      const agility = Math.min(hunting ? 1.7 + closing : 0.8, sh.speed / (L * 0.22));
+      const agility = Math.min(rushing ? 3 : hunting ? 1.7 + closing : 0.8 + 0.6 * curious, sh.speed / (L * 0.22));
       const maxTurn = agility * dt;
       const turned = clamp(angleDiff(sh.heading, desired), -maxTurn, maxTurn);
       sh.heading += turned;
       sh.turn += (turned / dt - sh.turn) * Math.min(1, dt * 3);
 
       const cruise = 30 + L * 0.04;
-      const targetSpeed = hunting ? cruise * (1.45 + closing * 1.5) : cruise;
-      sh.speed += (targetSpeed - sh.speed) * Math.min(1, dt * 1.1);
+      const targetSpeed = rushing
+        ? cruise * 1.3 + (Math.max(cruise * 3.8, Math.hypot(W, H) / 6) - cruise * 1.3) * baitRange
+        : hunting
+          ? cruise * (1.45 + closing * 1.5)
+          : cruise * (1 + 0.4 * curious) + Math.max(cruise * 1.2, Math.hypot(W, H) / 16) * curious * cursorRange;
+      sh.speed += (targetSpeed - sh.speed) * Math.min(1, dt * (rushing ? 2.5 : 1.1));
       sh.phase += dt * (2 + sh.speed / 24);
 
       nodes[0] += Math.cos(sh.heading) * sh.speed * dt;

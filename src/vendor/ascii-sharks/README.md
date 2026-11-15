@@ -19,5 +19,8 @@ Changes from upstream, each marked "Local change" in the code:
   - `focus`, `clear` and `clearStrength`: the point the sharks patrol around, the zone
     they keep out of, and how firmly.
   - Sharks can be `away` (swim out of frame and wait), with `park()` and `recall()`.
+  - Sharks notice the pointer: they swim over to a moving cursor and circle it, losing
+    interest when it sits still. `lure()` drops bait that every shark races for; the
+    engine calls it on a click or tap, along with the splash.
 
 `react.tsx` is left out because the site doesn't use React.
