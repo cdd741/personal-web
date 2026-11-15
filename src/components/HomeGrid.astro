@@ -105,6 +105,7 @@ const DEFAULT_SLIDER = 72;
 
 <script>
   import { createFourier, type SignatureData } from '../scripts/fourier';
+  import { scrub } from '../scripts/scrub';
   import { mountSkyClock } from '../scripts/sky-clock';
   import signature from '../data/signature.json';
 
@@ -122,6 +123,22 @@ const DEFAULT_SLIDER = 72;
     };
     slider.addEventListener('input', apply);
     apply();
+
+    // Scrolling the card into view adds circles, from a rough loop to the full signature.
+    // Touching the slider takes over from the scroll.
+    const card = canvas.closest<HTMLElement>('.card');
+    const target = Number(slider.value);
+    let manual = false;
+    const takeOver = () => (manual = true);
+    slider.addEventListener('pointerdown', takeOver);
+    slider.addEventListener('keydown', takeOver);
+    if (card) {
+      scrub(card, { from: 0.85, to: 0.2 }, (progress) => {
+        if (manual) return;
+        slider.value = String(Math.round(8 + (target - 8) * progress));
+        apply();
+      });
+    }
   }
 
   // Clock card.

@@ -30,33 +30,25 @@ import { SITE } from '../site.config';
 </Base>
 
 <script>
-  // Reveal the intro and the home cards as they scroll into view, staggered left to right.
-  // Anything already on screen at load is left alone, and so is everything under reduced motion.
-  const targets = document.querySelectorAll<HTMLElement>('[data-ocean-sheet] .intro, [data-ocean-sheet] .card');
-  if (targets.length && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entering = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.left - b.boundingClientRect.left);
-        entering.forEach((entry, i) => {
-          const el = entry.target as HTMLElement;
-          observer.unobserve(el);
-          el.style.setProperty('--reveal-delay', `${i * 90}ms`);
-          el.classList.add('in');
-          // Hand the element back to its own hover transitions once it has settled.
-          const settle = (e: TransitionEvent) => {
-            if (e.target !== el || e.propertyName !== 'translate') return;
-            el.removeEventListener('transitionend', settle);
-            el.classList.remove('reveal', 'in');
-          };
-          el.addEventListener('transitionend', settle);
-        });
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
-    );
-    for (const el of targets) {
-      if (el.getBoundingClientRect().top < window.innerHeight) continue;
-      el.classList.add('reveal');
-      observer.observe(el);
+  import { clamp01, easeOut, scrub } from '../scripts/scrub';
+
+  // The home cards assemble as they scroll in: each rises, grows and fades in with the
+  // scroll position (and reverses on the way back up). Cards further right start lower,
+  // so a row comes together on a diagonal.
+  const sheet = document.querySelector<HTMLElement>('[data-ocean-sheet]');
+  if (sheet) {
+    for (const el of sheet.querySelectorAll<HTMLElement>('.intro, .card')) {
+      scrub(el, { from: 1, to: 0.62 }, (progress) => {
+        if (progress >= 1) {
+          el.style.opacity = el.style.translate = el.style.scale = '';
+          return;
+        }
+        const across = clamp01(el.offsetLeft / Math.max(1, sheet.offsetWidth));
+        const rise = (1 - easeOut(progress)) * (70 + across * 110);
+        el.style.opacity = clamp01(progress / 0.7).toFixed(3);
+        el.style.translate = `0 ${rise.toFixed(1)}px`;
+        el.style.scale = (0.9 + 0.1 * easeOut(progress)).toFixed(4);
+      });
     }
   }
 </script>
@@ -77,23 +69,6 @@ import { SITE } from '../site.config';
     margin-top: 120svh;
     background: var(--bg);
     clip-path: inset(0 var(--inset) 0 var(--inset) round var(--corner) var(--corner) 0 0);
-  }
-
-  /* Cards rise into place the first time they scroll into view (see the script below). */
-  :global(.reveal) {
-    opacity: 0;
-    translate: 0 2.25rem;
-    scale: 0.97;
-  }
-
-  :global(.reveal.in) {
-    opacity: 1;
-    translate: 0 0;
-    scale: 1;
-    transition:
-      opacity 0.8s var(--ease-out) var(--reveal-delay, 0ms),
-      translate 0.8s var(--ease-out) var(--reveal-delay, 0ms),
-      scale 0.8s var(--ease-out) var(--reveal-delay, 0ms);
   }
 
   .intro {
