@@ -34,6 +34,8 @@ jobs:
       # The résumé PDF is rendered from /resume/ with Chromium after the site is built.
       - run: npx playwright install --with-deps chromium
       - run: npm run build:pdf
+      # The home page's scroll scenes must not overlap or overflow at common window sizes.
+      - run: npm run check:home
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

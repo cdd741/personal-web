@@ -16,7 +16,8 @@
     "check": "astro check",
     "astro": "astro",
     "placeholders": "node scripts/placeholders.mjs",
-    "build:pdf": "node scripts/resume-pdf.mjs"
+    "build:pdf": "node scripts/resume-pdf.mjs",
+    "check:home": "node scripts/check-home.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
