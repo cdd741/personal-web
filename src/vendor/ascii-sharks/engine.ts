@@ -130,11 +130,17 @@ export class OceanEngine {
     p.x = x;
     p.y = y;
     p.active = inside && e.pointerType !== "touch";
+    // Local change: sharks follow a cursor that moves (see World.pointer).
+    p.movedAt = this.world.time;
   };
 
   private onPointerDown = (e: PointerEvent) => {
     const { x, y, inside } = this.toLocal(e);
-    if (inside && !this.reducedMotion.matches) this.world.splash(x, y);
+    if (inside && !this.reducedMotion.matches) {
+      this.world.splash(x, y);
+      // Local change: a click also drops bait for the sharks.
+      this.world.lure(x, y);
+    }
   };
 
   private onPointerLeave = () => {
