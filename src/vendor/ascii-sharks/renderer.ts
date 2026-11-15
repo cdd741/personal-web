@@ -28,6 +28,8 @@ const ACCENTS = ["#e0892c", "#e03a32", "#b44ae0", "#33c8cc", "#3cb54a", "#3150e8
 // Sparse glyphs on bright skin, dense glyphs in shadow, so the texture
 // reinforces the shading instead of fighting it.
 const SKIN_RAMP = ":;t%SX8#@";
+/** Local change: how dark a skin glyph is against its cell (0 = black, 1 = invisible). */
+const SKIN_INK = 0.62;
 const FIN_GLYPHS = "%;tS:";
 const RIDGE_GLYPHS = "@8%";
 const EDGE_HEAVY = ":;";
@@ -814,7 +816,12 @@ export class AsciiRenderer {
       else if (flag === FLAG_MARK) color = `rgb(${Math.round(70 * tr)},${Math.round(70 * tg)},${Math.round(70 * tb)})`;
       else if (roll < 0.09) color = ACCENTS[key % ACCENTS.length];
       else if (roll < 0.13) color = "#ffffff";
-      else color = shade > 0.55 ? "#0e0f13" : "#1b1d24";
+      else {
+        // Local change: the glyph is a darker shade of its own cell instead of near-black,
+        // so the hide reads as texture and the letters don't jump out of the water.
+        const ink = level * SKIN_INK;
+        color = `rgb(${Math.round(ink * tr)},${Math.round(ink * tg)},${Math.round(ink * tb + 4)})`;
+      }
       ctx.fillStyle = color;
       ctx.fillText(glyph, x + cw / 2, y + ch / 2 + 1);
     }
