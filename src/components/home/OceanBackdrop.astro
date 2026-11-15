@@ -1,0 +1,155 @@
+---
+/**
+ * The water behind the whole home page: a colour that deepens as you scroll, light
+ * rays near the surface, the ASCII sharks and fish, and rising bubbles. scripts/dive
+ * runs all of it. Also the depth readout, and the page-level rules that only apply
+ * on the home page.
+ */
+---
+
+<div class="backdrop" aria-hidden="true" data-dive-backdrop>
+  <div class="rays" data-dive-rays></div>
+  <canvas class="layer ocean" data-dive-ocean></canvas>
+  <canvas class="layer" data-dive-bubbles></canvas>
+</div>
+
+<p class="depth mono" data-dive-depth aria-hidden="true">
+  <span class="depth-label" data-dive-depth-label>Depth</span>
+  <span class="depth-value"><span data-dive-depth-value>000</span> m</span>
+  <span class="depth-cue">Scroll to dive ↓</span>
+</p>
+
+<style>
+  .backdrop {
+    /* Surface colours; scripts/dive darkens them with depth. */
+    --water-top: #1b6f8f;
+    --water-bottom: #0c3b58;
+    position: fixed;
+    inset: 0 0 auto;
+    height: 100lvh;
+    z-index: 0;
+    overflow: hidden;
+    background: linear-gradient(var(--water-top), var(--water-bottom));
+  }
+
+  .layer {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The ASCII glyphs are drawn in the canvas's own font, so it has to be monospace. */
+  .ocean {
+    font-family: var(--font-mono), ui-monospace, Menlo, monospace;
+  }
+
+  /* Shafts of light from the surface. */
+  .rays {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(70% 55% at 50% -12%, rgb(190 235 255 / 0.32), transparent 70%),
+      linear-gradient(
+        104deg,
+        transparent 12%,
+        rgb(255 255 255 / 0.07) 19%,
+        transparent 27%,
+        transparent 38%,
+        rgb(255 255 255 / 0.05) 46%,
+        transparent 56%,
+        transparent 66%,
+        rgb(255 255 255 / 0.06) 73%,
+        transparent 82%
+      );
+    -webkit-mask: linear-gradient(#000, transparent 85%);
+    mask: linear-gradient(#000, transparent 85%);
+  }
+
+  .depth {
+    position: fixed;
+    top: clamp(5.5rem, 14vh, 8rem);
+    right: var(--gutter);
+    z-index: 3;
+    display: grid;
+    justify-items: end;
+    gap: 0.15rem;
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(244 242 238 / 0.6);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .depth-value {
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: rgb(244 242 238 / 0.9);
+  }
+
+  .depth-cue {
+    margin-top: 0.35rem;
+    transition: opacity 0.4s;
+  }
+
+  .depth.diving .depth-cue {
+    opacity: 0;
+  }
+
+  /* ---------- home-page-only rules for the shared chrome ---------- */
+  :global(body:has(.dive)) {
+    background: #01040b;
+  }
+
+  :global(body:has(.dive))::before {
+    display: none;
+  }
+
+  /* The header floats over the water in light text. It slides away while you scroll
+     down and comes back when you scroll up (scripts/dive sets data-away). */
+  :global(body:has(.dive) .site-header) {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 4;
+    --fg: #f4f2ee;
+    --fg-muted: rgb(244 242 238 / 0.82);
+    --accent-soft: rgb(255 255 255 / 0.14);
+    --bg-raised: rgb(255 255 255 / 0.08);
+    --border-strong: rgb(255 255 255 / 0.3);
+    color: var(--fg);
+    transition:
+      translate 0.4s var(--ease-out),
+      opacity 0.3s;
+  }
+
+  :global(body:has(.dive) .site-header)::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 50%;
+    z-index: -1;
+    width: 100vw;
+    height: 7rem;
+    translate: -50%;
+    background: linear-gradient(rgb(0 8 18 / 0.55), transparent);
+    pointer-events: none;
+  }
+
+  :global(body:has(.dive) .site-header[data-away]) {
+    translate: 0 -110%;
+    opacity: 0;
+  }
+
+  /* The home page is dark whatever the theme, so the toggle has nothing to do here. */
+  :global(body:has(.dive) [data-theme-toggle]) {
+    display: none;
+  }
+
+  /* The seabed scene is the footer on this page. */
+  :global(body:has(.dive) .site-footer) {
+    display: none;
+  }
+</style>

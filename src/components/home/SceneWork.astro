@@ -1,0 +1,112 @@
+---
+/**
+ * Work as a dive log: the deeper you scroll, the further back it goes. Entries come
+ * from the résumé data, newest first, with the degree at the bottom.
+ */
+import { RESUME } from '../../resume';
+
+const [degree] = RESUME.education;
+const entries = [
+  ...RESUME.experience.map((job) => ({
+    years: job.end === 'Present' ? `${job.start} – now` : `${job.start} – ${job.end}`,
+    name: job.company,
+    detail: job.role,
+  })),
+  ...(degree ? [{ years: degree.end ?? '', name: degree.school, detail: degree.degree }] : []),
+];
+---
+
+<div class="work container-wide" data-focus>
+  <h2 class="dive-kicker" data-work-head>Work, newest first</h2>
+  <ol class="log">
+    <span class="line" aria-hidden="true"><span data-work-line></span></span>
+    {
+      entries.map((entry) => (
+        <li data-work-entry>
+          <span class="years mono">{entry.years}</span>
+          <span class="name">{entry.name}</span>
+          <span class="detail">{entry.detail}</span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="more" data-work-more>
+    <a class="dive-link" href="/work/">The full story →</a>
+  </p>
+</div>
+
+<style>
+  .work {
+    max-width: 44rem;
+    margin-inline: max(var(--gutter), (100% - var(--wide)) / 2) auto;
+  }
+
+  .log {
+    position: relative;
+    display: grid;
+    gap: clamp(1rem, 3.2vh, 2rem);
+    margin: 0;
+    padding: 0 0 0 1.6rem;
+    list-style: none;
+  }
+
+  /* The dive line: a track with a bright part that grows as the entries appear. */
+  .line {
+    position: absolute;
+    inset: 0.4rem auto 0.4rem 0;
+    width: 2px;
+    border-radius: 2px;
+    background: rgb(244 242 238 / 0.16);
+  }
+
+  .line span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--trail);
+    transform-origin: top;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    align-items: baseline;
+    column-gap: 1rem;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 0.7);
+  }
+
+  .years {
+    grid-row: span 2;
+    font-size: 0.8rem;
+    color: rgb(244 242 238 / 0.62);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .name {
+    font-size: clamp(1.6rem, 1rem + 2.6vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .detail {
+    margin-top: 0.3rem;
+    font-size: 0.95rem;
+    color: rgb(244 242 238 / 0.75);
+  }
+
+  .more {
+    margin: clamp(1.25rem, 4vh, 2.25rem) 0 0 1.6rem;
+  }
+
+  @media (max-width: 560px) {
+    li {
+      grid-template-columns: 1fr;
+    }
+
+    .years {
+      grid-row: auto;
+      margin-bottom: 0.2rem;
+    }
+  }
+</style>

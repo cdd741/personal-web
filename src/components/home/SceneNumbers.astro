@@ -1,0 +1,60 @@
+---
+/** A few headline numbers that count up with the scroll. They restate résumé bullets. */
+import { HIGHLIGHTS } from '../../resume';
+---
+
+<div class="numbers container-wide" data-focus>
+  <h2 class="dive-kicker" data-numbers-head>By the numbers</h2>
+  <dl>
+    {
+      HIGHLIGHTS.map((item) => (
+        <div data-stat>
+          <dd class="dive-title">
+            <span data-stat-value data-to={item.value}>{item.value}</span>
+            <span class="suffix">{item.suffix}</span>
+          </dd>
+          <dt class="dive-text">{item.label}</dt>
+        </div>
+      ))
+    }
+  </dl>
+</div>
+
+<style>
+  dl {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1.5rem, 4vw, 3rem);
+    margin: 0;
+  }
+
+  dl > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .suffix {
+    font-size: 0.55em;
+    letter-spacing: -0.02em;
+    color: var(--c-amber);
+  }
+
+  dt {
+    max-width: 16rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: rgb(244 242 238 / 0.78);
+  }
+
+  @media (max-width: 880px) {
+    dl {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -1,0 +1,126 @@
+---
+/** The featured project: the first real (non-placeholder) featured entry in src/content/projects. */
+import { getProjects } from '../../lib';
+
+const project = (await getProjects()).find((p) => p.data.featured && !p.data.placeholder);
+const data = project?.data;
+const credit = data && [data.role, data.team].filter(Boolean).join(' · ');
+---
+
+{
+  data && (
+    <div class="project container-wide" data-focus>
+      <p class="dive-kicker" data-project-kicker>
+        Project · {data.year}
+      </p>
+      <h2 class="dive-title" data-project-title>
+        {data.title}
+      </h2>
+      {data.awards[0] && (
+        <p class="award" data-project-award>
+          <span>{data.awards[0]}</span>
+        </p>
+      )}
+      <p class="desc dive-text" data-project-desc>
+        {data.description.split(' ').map((word) => (
+          <span class="word">{word} </span>
+        ))}
+      </p>
+      <ul class="tags">
+        {credit && <li data-project-tag class="credit">{credit}</li>}
+        {data.tags.map((tag) => (
+          <li data-project-tag>{tag}</li>
+        ))}
+      </ul>
+      <p class="links" data-project-links>
+        {data.url && (
+          <a class="dive-link primary" href={data.url} rel="noopener">
+            Try it ↗
+          </a>
+        )}
+        {data.links.map((link) => (
+          <a class="dive-link" href={link.href} rel="noopener">
+            {link.label} ↗
+          </a>
+        ))}
+        <a class="dive-link" href="/projects/">
+          All projects →
+        </a>
+      </p>
+    </div>
+  )
+}
+
+<style>
+  .project {
+    display: grid;
+    justify-items: start;
+  }
+
+  .dive-kicker {
+    margin-bottom: 0.9rem;
+  }
+
+  .dive-title {
+    font-size: clamp(3.5rem, 2rem + 9vw, 9rem);
+    transform-origin: left center;
+  }
+
+  .award {
+    margin: 1.1rem 0 0;
+  }
+
+  .award span {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid color-mix(in oklab, var(--c-amber) 55%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--c-amber) 16%, rgb(0 10 22 / 0.5));
+    color: var(--c-amber);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .desc {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 40rem;
+    margin: 1.4rem 0 0;
+    font-size: clamp(1.15rem, 1rem + 0.9vw, 1.6rem);
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    max-width: 44rem;
+    margin: 1.4rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.72rem;
+  }
+
+  .tags li {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid rgb(244 242 238 / 0.22);
+    border-radius: 999px;
+    background: rgb(0 10 22 / 0.4);
+    color: rgb(244 242 238 / 0.82);
+  }
+
+  .tags .credit {
+    border-color: rgb(244 242 238 / 0.5);
+    color: #fff;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.75rem 0 0;
+  }
+</style>

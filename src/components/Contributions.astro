@@ -92,7 +92,7 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
             {data.source === 'sample' && <span class="badge badge-draft">sample data</span>}
           </p>
           <p class="headline">
-            <strong>{fmtNum.format(total)}</strong> contributions in the last year
+            <strong data-contrib-total={total}>{fmtNum.format(total)}</strong> contributions in the last year
           </p>
         </div>
         <a class="profile" href={profile} rel="me">
@@ -288,19 +288,9 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
       }
     });
 
-    // Light the days up column by column, like a long exposure, the first time the card is seen.
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      svg.classList.add('armed');
-      const io = new IntersectionObserver(
-        ([entry]) => {
-          if (!entry.isIntersecting) return;
-          svg.classList.add('lit');
-          io.disconnect();
-        },
-        { threshold: 0.3 },
-      );
-      io.observe(svg);
-    }
+    // The days light up column by column as the home page scrolls: scripts/dive sets
+    // --sweep (0 → 1) on the chart and counts the total up with it. `armed` turns that on.
+    svg.classList.add('armed');
   }
 </script>
 
@@ -316,7 +306,8 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     gap: 1rem;
   }
 
-  :global(:root[data-theme='dark']) .contrib {
+  :global(:root[data-theme='dark']) .contrib,
+  :global(.theme-dark) .contrib {
     --lv0: #262a40;
     --lv1: #6e4c17;
     --lv2: #a86c12;
@@ -426,24 +417,13 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     transition: opacity 0.1s;
   }
 
+  /* --sweep runs 0 → 1 with the scroll (see the script). Each column fades and grows in
+     as the sweep passes it; the constants give every column a short ramp and make sure
+     the last one is fully lit at 1. */
   .heatmap.armed .cell {
-    opacity: 0;
-  }
-
-  .heatmap.armed.lit .cell {
-    animation: light-up 0.5s var(--ease-out) forwards;
-    animation-delay: calc(var(--col) * 14ms);
-  }
-
-  @keyframes light-up {
-    from {
-      opacity: 0;
-      transform: scale(0.4);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+    --lit: clamp(0, calc((var(--sweep, 1) * 64 - var(--col)) / 6), 1);
+    opacity: var(--lit);
+    transform: scale(calc(0.4 + var(--lit) * 0.6));
   }
 
   .cell {

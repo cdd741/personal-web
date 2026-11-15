@@ -1,0 +1,72 @@
+---
+/**
+ * One full-screen scene of the home page. The section is taller than the screen by
+ * `hold` screens; its stage sticks to the viewport for that distance while
+ * scripts/dive plays the scene's animation from the scroll position.
+ */
+interface Props {
+  name: string;
+  /** How many extra screens of scrolling the scene stays pinned for. */
+  hold?: number;
+  /** Sharks in the water during this scene, comma-separated kinds from the roster in scripts/dive. */
+  sharks?: string;
+  /** Share of the fish population present, 0..1. */
+  fish?: number;
+  label?: string;
+}
+
+const { name, hold = 1, sharks = '', fish = 1, label } = Astro.props;
+---
+
+<section class="scene" data-scene={name} data-sharks={sharks} data-fish={fish} style={`--hold: ${hold}`} aria-label={label}>
+  <div class="stage" data-stage>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .scene {
+    position: relative;
+    height: calc((1 + var(--hold)) * 100svh);
+    /* A scene's box overlaps its neighbours while they hand over, so only the things
+       you can use inside it take pointer events; the rest lets clicks reach the water. */
+    pointer-events: none;
+  }
+
+  .scene :global(:is(a, button, summary, .card)) {
+    pointer-events: auto;
+  }
+
+  /* Each scene starts half a screen early, so it fades in while the one before fades out. */
+  .scene + .scene {
+    margin-top: -50svh;
+  }
+
+  .stage {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100svh;
+    padding-block: 5.5rem 3rem;
+  }
+
+  /* Without scroll-driven motion, or on screens too short to hold a scene, the scenes
+     are ordinary sections that scroll past. scripts/dive checks for this. */
+  @media (prefers-reduced-motion: reduce), (max-height: 540px) {
+    .scene {
+      height: auto;
+    }
+
+    .scene + .scene {
+      margin-top: 0;
+    }
+
+    .stage {
+      position: static;
+      height: auto;
+      min-height: 100svh;
+    }
+  }
+</style>

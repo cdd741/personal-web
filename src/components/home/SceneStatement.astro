@@ -1,0 +1,20 @@
+---
+/** One sentence that lights up word by word. */
+const STATEMENT = "This is where I keep things I've built, the occasional piece of writing, and a few toys.";
+---
+
+<p class="statement container-wide dive-text" data-statement data-focus>
+  {STATEMENT.split(' ').map((word) => <span class="word">{word} </span>)}
+</p>
+
+<style>
+  .statement {
+    display: flex;
+    flex-wrap: wrap;
+    margin-block: 0;
+    font-size: clamp(1.75rem, 1rem + 3.6vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+  }
+</style>

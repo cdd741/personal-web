@@ -1,8 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import HomeGrid from '../components/HomeGrid.astro';
-import { SITE } from '../site.config';
+import OceanBackdrop from '../components/home/OceanBackdrop.astro';
+import Scene from '../components/home/Scene.astro';
+import SceneGreeting from '../components/home/SceneGreeting.astro';
+import SceneStatement from '../components/home/SceneStatement.astro';
+import SceneWork from '../components/home/SceneWork.astro';
+import SceneNumbers from '../components/home/SceneNumbers.astro';
+import SceneProject from '../components/home/SceneProject.astro';
+import SceneGithub from '../components/home/SceneGithub.astro';
+import Seabed from '../components/home/Seabed.astro';
+import '../styles/dive.css';
 ---
 
 <Base>
@@ -13,64 +20,38 @@ import { SITE } from '../site.config';
     }
   </script>
 
-  <Hero />
-
-  <div class="container-wide intro">
-    <p>This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
-    <ul class="links">
-      <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
-      {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
-      <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
-    </ul>
+  <!-- The home page is one dive, from the surface to the seabed. Each scene is a screen
+       that pins while its animation plays; `hold` is how long, in screens. The sharks
+       and the amount of fish change with depth. scripts/dive runs it all. -->
+  <div class="dive theme-dark" data-dive>
+    <OceanBackdrop />
+    <div class="scenes">
+      <Scene name="greeting" hold={0.4} sharks="mako,classic" fish={1}>
+        <SceneGreeting />
+      </Scene>
+      <Scene name="statement" hold={0.8} sharks="mako,classic" fish={1}>
+        <SceneStatement />
+      </Scene>
+      <Scene name="work" hold={1.6} sharks="hammerhead,thresher" fish={0.8} label="Work">
+        <SceneWork />
+      </Scene>
+      <Scene name="numbers" hold={0.8} sharks="thresher,hammerhead" fish={0.65} label="By the numbers">
+        <SceneNumbers />
+      </Scene>
+      <Scene name="project" hold={1} sharks="tiger" fish={0.5} label="Featured project">
+        <SceneProject />
+      </Scene>
+      <Scene name="github" hold={0.8} sharks="tiger" fish={0.4} label="GitHub activity">
+        <SceneGithub />
+      </Scene>
+      <Seabed />
+    </div>
   </div>
-
-  <HomeGrid />
 </Base>
 
-<style>
-  .intro {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem 2rem;
-    padding-top: 2.75rem;
-  }
+<script>
+  import { startDive } from '../scripts/dive';
 
-  .intro p {
-    margin: 0;
-    max-width: 34rem;
-    font-size: var(--step-1);
-    line-height: 1.5;
-  }
-
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: var(--step--1);
-  }
-
-  .links a {
-    display: inline-block;
-    padding: 0.4rem 0.9rem;
-    border: 1px solid color-mix(in oklab, var(--c) 35%, var(--border));
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--c) 8%, transparent);
-    color: color-mix(in oklab, var(--c) 70%, var(--fg));
-    text-decoration: none;
-    transition:
-      background-color 0.2s,
-      box-shadow 0.2s,
-      transform 0.2s var(--ease-out);
-  }
-
-  .links a:hover {
-    background: color-mix(in oklab, var(--c) 16%, transparent);
-    box-shadow: 0 0 20px -4px color-mix(in oklab, var(--c) 55%, transparent);
-    transform: translateY(-1px);
-  }
-</style>
+  const root = document.querySelector<HTMLElement>('[data-dive]');
+  if (root) startDive(root);
+</script>

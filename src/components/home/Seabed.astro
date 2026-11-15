@@ -1,0 +1,130 @@
+---
+/**
+ * The bottom of the dive, and the home page's footer: links, a way back up, an ASCII
+ * sea floor with swaying kelp (drawn by scripts/dive/seabed), and a treasure chest that
+ * opens the command palette.
+ */
+import { RESUME_PDF } from '../../resume';
+import { SITE } from '../../site.config';
+
+const year = new Date().getFullYear();
+const CHEST = ['  _______', ' /      /|', '+------+ |', '|  [#] | +', '+------+/'].join('\n');
+---
+
+<footer class="seabed" data-scene="seabed" data-sharks="nurse" data-fish="0.25">
+  <div class="copy container-wide" data-seabed-copy>
+    <p class="dive-kicker">200 m · the seabed</p>
+    <h2 class="dive-title">That's the bottom.</h2>
+    <p class="links">
+      <a class="dive-link" href={SITE.links.github} rel="me">GitHub ↗</a>
+      {SITE.links.linkedin && <a class="dive-link" href={SITE.links.linkedin} rel="me">LinkedIn ↗</a>}
+      <a class="dive-link" href={RESUME_PDF} download>Résumé ↓</a>
+      <a class="dive-link" href="/about/">About</a>
+      <a class="dive-link" href="/rss.xml">RSS</a>
+    </p>
+    <p class="up">
+      <button type="button" class="dive-link primary" data-seabed-surface>Back to the surface ↑</button>
+    </p>
+  </div>
+
+  <div class="floor" data-seabed-floor>
+    <button type="button" class="chest mono" data-seabed-chest aria-label="Open the treasure chest (the command menu)">
+      <pre aria-hidden="true" set:text={CHEST} />
+    </button>
+    <pre class="kelp mono" aria-hidden="true" data-seabed-kelp></pre>
+    <pre class="sand mono" aria-hidden="true" data-seabed-sand></pre>
+  </div>
+
+  <p class="legal mono">© {year} {SITE.name}</p>
+</footer>
+
+<style>
+  .seabed {
+    position: relative;
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    min-height: 100svh;
+    padding-top: 6rem;
+  }
+
+  .copy {
+    align-self: center;
+    padding-bottom: 2rem;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 2rem 0 0;
+  }
+
+  .up {
+    margin: 1rem 0 0;
+  }
+
+  button.dive-link {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* The sea floor: two character grids on top of each other (kelp over sand), cut to the
+     width of the screen by the script. */
+  .floor {
+    position: relative;
+    overflow: hidden;
+    font-size: clamp(0.7rem, 0.55rem + 0.5vw, 0.9rem);
+    line-height: 1.15;
+  }
+
+  pre {
+    margin: 0;
+    font: inherit;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    white-space: pre;
+  }
+
+  .sand {
+    color: rgb(244 232 200 / 0.5);
+  }
+
+  .kelp {
+    position: absolute;
+    inset: auto 0 0;
+    color: color-mix(in oklab, var(--c-green) 80%, transparent);
+  }
+
+  .chest {
+    position: absolute;
+    right: clamp(1rem, 12vw, 12rem);
+    /* Sits on top of the three rows of sand. */
+    bottom: 3.45em;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: color-mix(in oklab, var(--c-amber) 75%, transparent);
+    cursor: pointer;
+    transition:
+      color 0.2s,
+      filter 0.2s,
+      translate 0.2s var(--ease-out);
+  }
+
+  .chest:hover,
+  .chest:focus-visible {
+    color: var(--c-amber);
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--c-amber) 70%, transparent));
+    translate: 0 -2px;
+  }
+
+  .legal {
+    margin: 0;
+    padding-block: 1rem 1.5rem;
+    font-size: 0.72rem;
+    color: rgb(244 242 238 / 0.5);
+    background: rgb(0 0 0 / 0.35);
+    width: 100%;
+    padding-inline: max(var(--gutter), (100% - var(--wide)) / 2);
+  }
+</style>

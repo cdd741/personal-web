@@ -1,0 +1,68 @@
+/* Shared type for the home page's scroll scenes (src/components/home). */
+.dive {
+  position: relative;
+  color: #f4f2ee;
+}
+
+.dive .scenes {
+  position: relative;
+  z-index: 1;
+}
+
+.dive-kicker {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(244 242 238 / 0.62);
+}
+
+.dive-title {
+  margin: 0;
+  font-size: clamp(2.5rem, 1.4rem + 5.4vw, 5.5rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
+}
+
+.dive-text {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.7);
+}
+
+.dive-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgb(244 242 238 / 0.3);
+  border-radius: 999px;
+  background: rgb(0 10 22 / 0.35);
+  color: #f4f2ee;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    transform 0.2s var(--ease-out);
+}
+
+.dive-link:hover {
+  color: #fff;
+  border-color: rgb(244 242 238 / 0.7);
+  background: rgb(255 255 255 / 0.12);
+  transform: translateY(-1px);
+}
+
+.dive-link.primary {
+  border-color: transparent;
+  background: var(--trail);
+  color: #fff;
+}
+
+.dive .word {
+  white-space: pre;
+}

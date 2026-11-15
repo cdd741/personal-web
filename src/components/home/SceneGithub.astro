@@ -1,0 +1,17 @@
+---
+/** The GitHub heatmap. scripts/dive lights it up column by column with the scroll. */
+import Contributions from '../Contributions.astro';
+---
+
+<div class="github container-wide" data-focus data-github>
+  <Contributions />
+</div>
+
+<style>
+  /* The card floats on the water: translucent, so fish show faintly through it. */
+  .github :global(.card) {
+    background: rgb(4 12 24 / 0.72);
+    border-color: rgb(244 242 238 / 0.14);
+    backdrop-filter: blur(10px);
+  }
+</style>
