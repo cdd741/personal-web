@@ -7,6 +7,7 @@ npm install
 npm run dev      # http://localhost:4321, drafts visible
 npm run build    # static site in dist/
 npm run check    # type-check .astro and .ts files
+npm run check:home  # after a build: the home page's scroll scenes don't overlap or overflow
 ```
 
 ## Editing content

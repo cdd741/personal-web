@@ -49,7 +49,13 @@ const { name, hold = 1, sharks = '', fish = 1, label } = Astro.props;
     flex-direction: column;
     justify-content: center;
     height: 100svh;
-    padding-block: 5.5rem 3rem;
+    padding-block: clamp(4.5rem, 11vh, 5.5rem) clamp(1.25rem, 5vh, 3rem);
+  }
+
+  /* scripts/dive sets --fit below 1 when a scene's content is taller than the screen. */
+  .stage > :global(*) {
+    transform: scale(var(--fit, 1));
+    transform-origin: left center;
   }
 
   /* Without scroll-driven motion, or on screens too short to hold a scene, the scenes
@@ -67,6 +73,10 @@ const { name, hold = 1, sharks = '', fish = 1, label } = Astro.props;
       position: static;
       height: auto;
       min-height: 100svh;
+    }
+
+    .stage > :global(*) {
+      transform: none;
     }
   }
 </style>

@@ -60,9 +60,14 @@ interface Scene {
   reset: () => void;
 }
 
-/** How a scene fades as its stage slides in from below and, later, off the top. */
-const entering = (u: number) => span(u, -0.55, -0.05);
-const leaving = (u: number, hold: number) => span(u, hold - 0.05, hold + 0.45);
+/**
+ * How a scene fades as its stage slides in from below and, later, off the top.
+ * Scenes overlap by half a screen (Scene.astro), so the next scene's `u` is this one's
+ * minus `hold + 0.5`: these two ranges meet exactly, and a scene is fully gone before
+ * the next starts to show. Keep them that way, or two scenes are on screen at once.
+ */
+const entering = (u: number) => span(u, -0.3, 0.05);
+const leaving = (u: number, hold: number) => span(u, hold - 0.15, hold + 0.2);
 
 function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
   switch (el.dataset.scene) {
@@ -70,7 +75,7 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
       const copy = $(el, '[data-greeting]');
       return {
         render: (u, { hold }) => {
-          const out = span(u, 0.05, hold + 0.35);
+          const out = span(u, 0.05, hold + 0.2);
           pose(copy, 1 - out, -out * 70, 1 - out * 0.1);
         },
         reset: () => unpose(copy),
@@ -84,7 +89,7 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
         render: (u, { hold }) => {
           const visible = entering(u) * (1 - leaving(u, hold));
           pose(block, visible, (1 - easeOut(entering(u))) * 50);
-          lightWords(words, span(u, -0.2, hold - 0.2) * words.length);
+          lightWords(words, span(u, -0.15, hold - 0.25) * words.length);
         },
         reset: () => {
           unpose(block);
@@ -132,7 +137,7 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
           const out = 1 - leaving(u, hold);
           pose(head, entering(u) * out);
           stats.forEach((s, i) => {
-            const p = span(u, -0.4 + i * 0.16, 0.3 + i * 0.16);
+            const p = span(u, -0.3 + i * 0.14, 0.2 + i * 0.14);
             pose(s.stat, p * out, (1 - easeOut(p)) * 40);
             // Small numbers ("1st") don't count up: 0st, 1st reads as a glitch.
             const next = String(s.to > 1 ? Math.round(s.to * easeOut(p)) : s.to);
@@ -163,15 +168,15 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
           const arrive = entering(u);
           pose(kicker, arrive * out);
           pose(title, arrive * out, 0, 1.22 - 0.22 * easeOut(arrive));
-          const pop = span(u, -0.1, 0.15);
+          const pop = span(u, 0, 0.2);
           pose(award, pop * out, 0, 0.8 + 0.2 * easeOut(pop));
-          pose(desc, span(u, -0.05, 0.1) * out);
-          lightWords(words, span(u, 0.05, 0.6) * words.length, 0.2);
+          pose(desc, span(u, 0, 0.15) * out);
+          lightWords(words, span(u, 0.05, 0.5) * words.length, 0.2);
           tags.forEach((tag, i) => {
-            const p = span(u, 0.4 + i * 0.045, 0.58 + i * 0.045);
+            const p = span(u, 0.3 + i * 0.04, 0.46 + i * 0.04);
             pose(tag, p * out, (1 - easeOut(p)) * 18);
           });
-          const p = span(u, 0.78, 0.98);
+          const p = span(u, 0.6, 0.76);
           pose(links, p * out, (1 - easeOut(p)) * 18);
         },
         reset: () => {
@@ -197,7 +202,7 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
         render: (u, { hold }) => {
           const arrive = entering(u);
           pose(block, arrive * (1 - leaving(u, hold)), (1 - easeOut(arrive)) * 50);
-          sweep(span(u, -0.25, hold - 0.3));
+          sweep(span(u, -0.2, hold - 0.4));
         },
         reset: () => {
           unpose(block);
@@ -211,7 +216,8 @@ function buildScene(el: HTMLElement): Pick<Scene, 'render' | 'reset'> {
       return {
         // Never pinned: it's the end of the page, so it just fades in as it comes up.
         render: (u) => {
-          const arrive = span(u, -0.75, -0.2);
+          // The scene above it is gone by the time this one is 0.8 of a screen from the top.
+          const arrive = span(u, -0.8, -0.3);
           pose(copy, arrive, (1 - easeOut(arrive)) * 50);
         },
         reset: () => unpose(copy),
@@ -288,6 +294,19 @@ export function startDive(root: HTMLElement) {
       scene.top = scene.el.getBoundingClientRect().top + window.scrollY;
       scene.pinned = !!stage && getComputedStyle(stage).position === 'sticky';
       scene.hold = scene.pinned ? (scene.el.offsetHeight - stage!.offsetHeight) / vh : 0;
+      if (!stage) continue;
+      // A pinned scene has exactly one screen to live in. If its content is taller than
+      // that (a short window, large text), shrink it to fit instead of letting it spill
+      // over the scenes above and below.
+      let fit = 1;
+      if (scene.pinned) {
+        const style = getComputedStyle(stage);
+        const room = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+        let content = 0;
+        for (const child of stage.children) content += (child as HTMLElement).offsetHeight;
+        if (content > room) fit = Math.max(0.5, room / content);
+      }
+      stage.style.setProperty('--fit', fit.toFixed(4));
     }
   };
 
