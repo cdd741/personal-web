@@ -9,7 +9,8 @@ const MAX_STEPS = 4;
  * pointer input, pausing off-screen, and prefers-reduced-motion.
  */
 export class OceanEngine {
-  private world: World;
+  /** Local change: public, so the page can steer the ocean (current, focus, roster). */
+  readonly world: World;
   private renderer: AsciiRenderer;
   private raf = 0;
   private last = 0;

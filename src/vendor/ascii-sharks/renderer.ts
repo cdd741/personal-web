@@ -318,7 +318,8 @@ export class AsciiRenderer {
   private fishStyles = FISH_ALPHAS.map((a) => `rgba(230,238,255,${a})`);
 
   constructor(private canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext("2d", { alpha: false });
+    // Local change: an alpha channel, so the page's water colour shows through.
+    const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("2D canvas unavailable");
     this.ctx = ctx;
     this.bg = document.createElement("canvas");
@@ -395,8 +396,9 @@ export class AsciiRenderer {
     if (!g) return;
     const { width: W, height: H, dpr, cw, ch } = this;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.fillStyle = "#000";
-    g.fillRect(0, 0, W, H);
+    // Local change: no black fill. The canvas stays transparent so the page can colour
+    // the water behind it.
+    g.clearRect(0, 0, W, H);
     paintGrid(g, W, H, cw, ch, dpr);
   }
 
@@ -411,6 +413,8 @@ export class AsciiRenderer {
     this.diffuse(dt);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // Local change: clear first, because the background no longer covers the last frame.
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.drawImage(this.bg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 

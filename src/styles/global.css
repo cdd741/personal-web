@@ -72,7 +72,10 @@
   }
 }
 
-:root[data-theme='dark'] {
+/* .theme-dark gives one part of a page the dark tokens whatever the visitor's theme
+   (the home page is always dark). */
+:root[data-theme='dark'],
+.theme-dark {
   color-scheme: dark;
   --bg: #0c0e18;
   --bg-raised: #151827;

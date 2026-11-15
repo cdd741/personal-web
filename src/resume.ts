@@ -152,4 +152,15 @@ export const RESUME = {
   ],
 };
 
+/**
+ * Headline numbers for the home page. Each one restates a bullet above, so change them together.
+ * `value` counts up as the visitor scrolls; `prefix`/`suffix` stay put.
+ */
+export const HIGHLIGHTS = [
+  { value: 5, suffix: '×', label: 'growth in signed members at Alan Canada since I joined' },
+  { value: 1, suffix: 'st', label: 'place at ElevenHacks, with Lullaby' },
+  { value: 60, suffix: '%', label: 'adoption of Faire\'s European Membership Program in its first 7 days' },
+  { value: 130, suffix: 'K+', label: 'food retailers on the purchasing and returns flow I redesigned at Faire' },
+];
+
 export const RESUME_PDF = '/andre-chen-resume.pdf';

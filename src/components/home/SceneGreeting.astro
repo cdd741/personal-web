@@ -1,0 +1,67 @@
+---
+import { SITE } from '../../site.config';
+---
+
+<div class="copy container-wide" data-greeting>
+  <h1 class="dive-title">Hi, I'm Andre.</h1>
+  <p class="role dive-text">
+    {SITE.role} at <a href={SITE.company.url}>{SITE.company.name}</a>.
+  </p>
+  <p class="caption mono">
+    <span class="hint-mouse">Fish scatter from your cursor. Click to splash.</span>
+    <span class="hint-touch">Tap the water to splash.</span>
+    <a href="https://github.com/stackedlol/ascii-sharks" rel="noopener">ascii-sharks ↗</a>
+  </p>
+</div>
+
+<style>
+  .copy {
+    margin-top: auto;
+    padding-bottom: clamp(1rem, 6vh, 3.5rem);
+    transform-origin: left bottom;
+  }
+
+  .role {
+    margin: 0.9rem 0 0;
+    font-size: var(--step-1);
+    color: rgb(244 242 238 / 0.85);
+  }
+
+  .caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 1.4rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(244 242 238 / 0.6);
+  }
+
+  a {
+    color: inherit;
+    text-decoration-color: rgb(255 255 255 / 0.4);
+  }
+
+  .caption a {
+    color: rgb(244 242 238 / 0.8);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #fff;
+    text-decoration-color: var(--accent);
+  }
+
+  .hint-touch {
+    display: none;
+  }
+
+  @media (hover: none) {
+    .hint-mouse {
+      display: none;
+    }
+
+    .hint-touch {
+      display: inline;
+    }
+  }
+</style>

@@ -205,8 +205,6 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
 }
 
 <script>
-  import { scrub } from '../scripts/scrub';
-
   const card = document.querySelector<HTMLElement>('[data-contrib]');
   const svg = card?.querySelector<SVGSVGElement>('[data-heatmap]');
   if (card && svg) {
@@ -290,16 +288,9 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
       }
     });
 
-    // Scrolling the card into view lights the days up column by column, like a long
-    // exposure, and counts the total up with them.
-    const totalEl = card.querySelector<HTMLElement>('[data-contrib-total]');
-    const total = Number(totalEl?.dataset.contribTotal ?? 0);
-    const fmtTotal = new Intl.NumberFormat('en');
+    // The days light up column by column as the home page scrolls: scripts/dive sets
+    // --sweep (0 → 1) on the chart and counts the total up with it. `armed` turns that on.
     svg.classList.add('armed');
-    scrub(card, { from: 0.9, to: 0.35 }, (progress) => {
-      svg.style.setProperty('--sweep', progress.toFixed(4));
-      if (totalEl) totalEl.textContent = fmtTotal.format(Math.round(total * progress));
-    });
   }
 </script>
 
@@ -315,7 +306,8 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     gap: 1rem;
   }
 
-  :global(:root[data-theme='dark']) .contrib {
+  :global(:root[data-theme='dark']) .contrib,
+  :global(.theme-dark) .contrib {
     --lv0: #262a40;
     --lv1: #6e4c17;
     --lv2: #a86c12;

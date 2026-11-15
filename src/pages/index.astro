@@ -1,8 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import HomeGrid from '../components/HomeGrid.astro';
-import { SITE } from '../site.config';
+import OceanBackdrop from '../components/home/OceanBackdrop.astro';
+import Scene from '../components/home/Scene.astro';
+import SceneGreeting from '../components/home/SceneGreeting.astro';
+import SceneStatement from '../components/home/SceneStatement.astro';
+import SceneWork from '../components/home/SceneWork.astro';
+import SceneNumbers from '../components/home/SceneNumbers.astro';
+import SceneProject from '../components/home/SceneProject.astro';
+import SceneGithub from '../components/home/SceneGithub.astro';
+import Seabed from '../components/home/Seabed.astro';
+import '../styles/dive.css';
 ---
 
 <Base>
@@ -13,122 +20,38 @@ import { SITE } from '../site.config';
     }
   </script>
 
-  <Hero />
-
-  <div class="sheet" data-ocean-sheet>
-    <div class="container-wide intro">
-      <p class="still">This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
-      <ul class="links">
-        <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
-        {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
-        <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
-      </ul>
+  <!-- The home page is one dive, from the surface to the seabed. Each scene is a screen
+       that pins while its animation plays; `hold` is how long, in screens. The sharks
+       and the amount of fish change with depth. scripts/dive runs it all. -->
+  <div class="dive theme-dark" data-dive>
+    <OceanBackdrop />
+    <div class="scenes">
+      <Scene name="greeting" hold={0.4} sharks="mako,classic" fish={1}>
+        <SceneGreeting />
+      </Scene>
+      <Scene name="statement" hold={0.8} sharks="mako,classic" fish={1}>
+        <SceneStatement />
+      </Scene>
+      <Scene name="work" hold={1.6} sharks="hammerhead,thresher" fish={0.8} label="Work">
+        <SceneWork />
+      </Scene>
+      <Scene name="numbers" hold={0.8} sharks="thresher,hammerhead" fish={0.65} label="By the numbers">
+        <SceneNumbers />
+      </Scene>
+      <Scene name="project" hold={1} sharks="tiger" fish={0.5} label="Featured project">
+        <SceneProject />
+      </Scene>
+      <Scene name="github" hold={0.8} sharks="tiger" fish={0.4} label="GitHub activity">
+        <SceneGithub />
+      </Scene>
+      <Seabed />
     </div>
-
-    <HomeGrid />
   </div>
 </Base>
 
 <script>
-  import { clamp01, easeOut, scrub } from '../scripts/scrub';
+  import { startDive } from '../scripts/dive';
 
-  // The home cards assemble as they scroll in: each rises, grows and fades in with the
-  // scroll position (and reverses on the way back up). Cards further right start lower,
-  // so a row comes together on a diagonal.
-  const sheet = document.querySelector<HTMLElement>('[data-ocean-sheet]');
-  if (sheet) {
-    for (const el of sheet.querySelectorAll<HTMLElement>('.intro, .card')) {
-      scrub(el, { from: 1, to: 0.62 }, (progress) => {
-        if (progress >= 1) {
-          el.style.opacity = el.style.translate = el.style.scale = '';
-          return;
-        }
-        const across = clamp01(el.offsetLeft / Math.max(1, sheet.offsetWidth));
-        const rise = (1 - easeOut(progress)) * (70 + across * 110);
-        el.style.opacity = clamp01(progress / 0.7).toFixed(3);
-        el.style.translate = `0 ${rise.toFixed(1)}px`;
-        el.style.scale = (0.9 + 0.1 * easeOut(progress)).toFixed(4);
-      });
-    }
-  }
+  const root = document.querySelector<HTMLElement>('[data-dive]');
+  if (root) startDive(root);
 </script>
-
-<style>
-  /* The rest of the page is a sheet of paper that slides up over the pinned ocean. It
-     starts as a rounded card with water showing on both sides, and Hero.astro raises
-     --open from 0 to 1 on scroll to widen it to the full page. The inset never reaches
-     the content. */
-  .sheet {
-    --open: 0;
-    --side: calc((100vw - min(100vw - 2 * var(--gutter), var(--wide))) / 2);
-    --inset: calc(min(9rem, var(--side) - 0.5rem) * (1 - var(--open)));
-    --corner: calc(1.75rem * (1 - var(--open)));
-    position: relative;
-    z-index: 1;
-    /* The gap is scroll distance during which the ocean stays pinned and its scenes play. */
-    margin-top: 120svh;
-    background: var(--bg);
-    clip-path: inset(0 var(--inset) 0 var(--inset) round var(--corner) var(--corner) 0 0);
-  }
-
-  .intro {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem 2rem;
-    padding-top: 2.75rem;
-  }
-
-  /* The sentence plays over the ocean; it only appears here when that animation is off. */
-  .intro .still {
-    display: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .sheet {
-      margin-top: -1.75rem;
-    }
-
-    .intro .still {
-      display: block;
-    }
-  }
-
-  .intro p {
-    margin: 0;
-    max-width: 34rem;
-    font-size: var(--step-1);
-    line-height: 1.5;
-  }
-
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: var(--step--1);
-  }
-
-  .links a {
-    display: inline-block;
-    padding: 0.4rem 0.9rem;
-    border: 1px solid color-mix(in oklab, var(--c) 35%, var(--border));
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--c) 8%, transparent);
-    color: color-mix(in oklab, var(--c) 70%, var(--fg));
-    text-decoration: none;
-    transition:
-      background-color 0.2s,
-      box-shadow 0.2s,
-      transform 0.2s var(--ease-out);
-  }
-
-  .links a:hover {
-    background: color-mix(in oklab, var(--c) 16%, transparent);
-    box-shadow: 0 0 20px -4px color-mix(in oklab, var(--c) 55%, transparent);
-    transform: translateY(-1px);
-  }
-</style>

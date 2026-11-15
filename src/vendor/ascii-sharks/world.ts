@@ -71,6 +71,8 @@ export interface Shark {
   retargetAt: number;
   /** 0 far / dim → 1 near / bright. */
   depth: number;
+  /** Local change: an away shark swims out of the frame and waits there until called back. */
+  away: boolean;
 }
 
 export interface WorldEvent {
@@ -94,6 +96,18 @@ export class World {
   events: WorldEvent[] = [];
   pointer = { x: 0, y: 0, active: false };
 
+  // Local changes: knobs the page turns while it scrolls.
+  /** A current, in px/s, that carries every fish (and nudges the sharks). Fish swept out one side come back in the other. */
+  drift = { x: 0, y: 0 };
+  /** Where the sharks patrol around and keep clear of; null means the middle of the frame. */
+  focus: { x: number; y: number } | null = null;
+  /** Half-size in px of the zone around the focus that sharks steer out of; null keeps the default. */
+  clear: { rx: number; ry: number } | null = null;
+  /** How hard sharks are pushed out of that zone (1 = upstream's gentle nudge). */
+  clearStrength = 1;
+  /** Share of the fish population that may be in the water, 0..1. Lower it to thin the schools out. */
+  fishShare = 1;
+
   /** Fish neighbourhood radius; the spatial hash bucket size matches it. */
   private perception = 60;
   /** Per-species personal space in px (x, y). */
@@ -106,6 +120,7 @@ export class World {
   private bucketCount = new Uint16Array(0);
   private bucketNext = new Int32Array(0);
   private lastSpawn = 0;
+  private aliveCount = 0;
   private tmp = { x: 0, y: 0 };
 
   /** fishCount overrides the area-based population (the sidebar wants a single small school). */
@@ -172,6 +187,7 @@ export class World {
         target: null,
         retargetAt: 0,
         depth: size,
+        away: false,
       });
     }
     // Smaller (farther) sharks draw first so the big one swims over them.
@@ -227,6 +243,8 @@ export class World {
 
   step(dt: number) {
     this.time += dt;
+    this.aliveCount = 0;
+    for (const f of this.fish) if (f.alive) this.aliveCount++;
     this.rebuildHash();
     this.stepFish(dt);
     this.stepSharks(dt);
@@ -418,12 +436,14 @@ export class World {
       if (relayed > alarm) alarm += (relayed - alarm) * contagion;
       f.alarm = alarm;
 
-      // Soft walls.
+      // Soft walls. Local change: the top and bottom walls give way to a vertical current,
+      // so fish can be carried out of the frame.
       const m = 36;
+      const wallY = 1 - Math.min(1, Math.abs(this.drift.y) / 60);
       if (f.x < m) ax += (m - f.x) * 7;
       else if (f.x > W - m) ax -= (f.x - (W - m)) * 7;
-      if (f.y < m) ay += (m - f.y) * 7;
-      else if (f.y > H - m) ay -= (f.y - (H - m)) * 7;
+      if (f.y < m) ay += (m - f.y) * 7 * wallY;
+      else if (f.y > H - m) ay -= (f.y - (H - m)) * 7 * wallY;
 
       // Ambient current and a little individual restlessness.
       current(f.x, f.y, time, cur);
@@ -451,22 +471,69 @@ export class World {
       }
       f.turn += (angleDiff(before, Math.atan2(f.vy, f.vx)) / dt - f.turn) * Math.min(1, dt * 8);
       f.phase += dt * (7 + Math.hypot(f.vx, f.vy) * 0.12);
-      f.x = clamp(f.x + f.vx * dt, -60, W + 60);
-      f.y = clamp(f.y + f.vy * dt, -60, H + 60);
+      f.x = clamp(f.x + (f.vx + this.drift.x) * dt, -60, W + 60);
+      f.y += (f.vy + this.drift.y) * dt;
+      // Local change: a fish carried out through the top or bottom comes back in the other
+      // side, unless the water is meant to be emptier now, in which case it stays out.
+      if (f.y < -50 || f.y > H + 50) {
+        const carried = (f.y < 0 && this.drift.y < -20) || (f.y > H && this.drift.y > 20);
+        if (!carried) {
+          f.y = clamp(f.y, -60, H + 60);
+        } else if (this.aliveCount > this.fishShare * fish.length) {
+          f.alive = false;
+          f.respawnAt = time;
+          this.aliveCount--;
+        } else {
+          f.y += f.y < 0 ? H + 100 : -(H + 100);
+        }
+      }
     }
   }
 
   private stepSharks(dt: number) {
     const { sharks, width: W, height: H, time } = this;
     const minSide = Math.min(W, H);
-    const cxW = W / 2;
-    const cyW = H / 2;
+    // Local change: patrol around the page's focus point when it sets one.
+    const cxW = this.focus?.x ?? W / 2;
+    const cyW = this.focus?.y ?? H / 2;
+    const clearX = this.clear?.rx ?? W * 0.3;
+    const clearY = this.clear?.ry ?? H * 0.16;
 
     for (const sh of sharks) {
       const L = sh.length;
       const nodes = sh.nodes;
+
+      // Local change: the current nudges sharks too, at a fraction of what fish feel.
+      const pushX = this.drift.x * 0.35 * dt;
+      const pushY = this.drift.y * 0.35 * dt;
+      for (let k = 0; k < SHARK_NODES; k++) {
+        nodes[k * 2] += pushX;
+        nodes[k * 2 + 1] += pushY;
+      }
+
       const hx = nodes[0];
       const hy = nodes[1];
+
+      // Local change: an away shark heads for the nearest side, then waits just out of frame.
+      if (sh.away) {
+        const exitX = hx < W / 2 ? -L * 1.6 : W + L * 1.6;
+        if (hx < -L * 1.3 || hx > W + L * 1.3) {
+          sh.speed = 0;
+          continue;
+        }
+        const desired = Math.atan2(clamp(H / 2 - hy, -1, 1) * 0.15, exitX - hx);
+        const maxTurn = 1.1 * dt;
+        const turned = clamp(angleDiff(sh.heading, desired), -maxTurn, maxTurn);
+        sh.heading += turned;
+        sh.turn += (turned / dt - sh.turn) * Math.min(1, dt * 3);
+        sh.speed += ((30 + L * 0.04) * 2.2 - sh.speed) * Math.min(1, dt * 1.1);
+        sh.phase += dt * (2 + sh.speed / 24);
+        sh.target = null;
+        nodes[0] += Math.cos(sh.heading) * sh.speed * dt;
+        nodes[1] += Math.sin(sh.heading) * sh.speed * dt;
+        this.trailSpine(sh);
+        continue;
+      }
 
       sh.hunger = Math.min(1, sh.hunger + dt * 0.03);
 
@@ -525,12 +592,12 @@ export class World {
       }
 
       // Keep the headline mostly clear: a soft elliptical no-swim zone.
-      const ex = (hx - cxW) / (W * 0.3);
-      const ey = (hy - cyW) / (H * 0.16);
+      const ex = (hx - cxW) / clearX;
+      const ey = (hy - cyW) / clearY;
       const e2 = ex * ex + ey * ey;
       if (e2 < 1) {
         const e = Math.sqrt(e2) || 1e-3;
-        const w = (1 - e) * (hunting ? 1 : 2.5);
+        const w = (1 - e) * (hunting ? 1 : 2.5) * this.clearStrength;
         dx += (ex / e) * w;
         dy += (ey / e) * w;
       }
@@ -540,8 +607,9 @@ export class World {
       const over = Math.max(-hx, hx - W, -hy, hy - H);
       if (over > -L * 0.05) {
         const w = clamp((over + L * 0.05) / (L * 0.35), 0, 1) * 3.5;
-        const toX = cxW - hx;
-        const toY = cyW - hy;
+        // Local change: aim for the middle of the frame, not the focus, which can sit near an edge.
+        const toX = W / 2 - hx;
+        const toY = H / 2 - hy;
         const d = Math.hypot(toX, toY) || 1;
         dx += (toX / d) * w;
         dy += (toY / d) * w;
@@ -562,21 +630,7 @@ export class World {
 
       nodes[0] += Math.cos(sh.heading) * sh.speed * dt;
       nodes[1] += Math.sin(sh.heading) * sh.speed * dt;
-
-      // Follow-the-leader spine, with a stiffness limit per joint so the
-      // body bends into a C at most and never folds back on itself.
-      const seg = L / (SHARK_NODES - 1);
-      const maxBend = 0.16;
-      let prevAngle = sh.heading + Math.PI;
-      for (let k = 1; k < SHARK_NODES; k++) {
-        const px = nodes[(k - 1) * 2];
-        const py = nodes[(k - 1) * 2 + 1];
-        let angle = Math.atan2(nodes[k * 2 + 1] - py, nodes[k * 2] - px);
-        angle = prevAngle + clamp(angleDiff(prevAngle, angle), -maxBend, maxBend);
-        nodes[k * 2] = px + Math.cos(angle) * seg;
-        nodes[k * 2 + 1] = py + Math.sin(angle) * seg;
-        prevAngle = angle;
-      }
+      this.trailSpine(sh);
 
       // Feed.
       if (sh.hunger > 0.15) {
@@ -594,6 +648,53 @@ export class World {
         }
       }
     }
+  }
+
+  /**
+   * Follow-the-leader spine, with a stiffness limit per joint so the
+   * body bends into a C at most and never folds back on itself.
+   * (Local change: moved out of stepSharks so away sharks can use it too.)
+   */
+  private trailSpine(sh: Shark) {
+    const nodes = sh.nodes;
+    const seg = sh.length / (SHARK_NODES - 1);
+    const maxBend = 0.16;
+    let prevAngle = sh.heading + Math.PI;
+    for (let k = 1; k < SHARK_NODES; k++) {
+      const px = nodes[(k - 1) * 2];
+      const py = nodes[(k - 1) * 2 + 1];
+      let angle = Math.atan2(nodes[k * 2 + 1] - py, nodes[k * 2] - px);
+      angle = prevAngle + clamp(angleDiff(prevAngle, angle), -maxBend, maxBend);
+      nodes[k * 2] = px + Math.cos(angle) * seg;
+      nodes[k * 2 + 1] = py + Math.sin(angle) * seg;
+      prevAngle = angle;
+    }
+  }
+
+  /** Local change: moves a shark out of frame at once (used for sharks that start away). */
+  park(sh: Shark) {
+    const dx = (sh.nodes[0] < this.width / 2 ? -1 : 1) * (this.width + sh.length * 2);
+    for (let k = 0; k < SHARK_NODES; k++) sh.nodes[k * 2] += dx;
+    sh.away = true;
+    sh.speed = 0;
+  }
+
+  /** Local change: calls an away shark back; one waiting out of frame swims straight in. */
+  recall(sh: Shark) {
+    if (!sh.away) return;
+    sh.away = false;
+    const hx = sh.nodes[0];
+    if (hx > -sh.length * 0.5 && hx < this.width + sh.length * 0.5) return;
+    const y = rand(0.2, 0.8) * this.height;
+    const x = hx < this.width / 2 ? -sh.length * 0.2 : this.width + sh.length * 0.2;
+    sh.heading = Math.atan2(this.height / 2 - y, this.width / 2 - x);
+    const seg = sh.length / (SHARK_NODES - 1);
+    for (let k = 0; k < SHARK_NODES; k++) {
+      sh.nodes[k * 2] = x - Math.cos(sh.heading) * seg * k;
+      sh.nodes[k * 2 + 1] = y - Math.sin(sh.heading) * seg * k;
+    }
+    sh.speed = (30 + sh.length * 0.04) * 1.8;
+    sh.turn = 0;
   }
 
   /**
@@ -633,9 +734,13 @@ export class World {
 
   private respawn() {
     const { time, width: W, height: H } = this;
-    const due: Fish[] = [];
+    let due: Fish[] = [];
     for (const f of this.fish) if (!f.alive && f.respawnAt <= time) due.push(f);
     if (due.length === 0) return;
+    // Local change: no new schools while the water is meant to be emptier than it is.
+    const room = Math.floor(this.fishShare * this.fish.length) - this.aliveCount;
+    if (room <= 0) return;
+    due = due.slice(0, room);
     if (due.length < 6 && time - this.lastSpawn < 9) return;
     this.lastSpawn = time;
 
