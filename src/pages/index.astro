@@ -15,19 +15,31 @@ import { SITE } from '../site.config';
 
   <Hero />
 
-  <div class="container-wide intro">
-    <p>This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
-    <ul class="links">
-      <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
-      {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
-      <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
-    </ul>
-  </div>
+  <div class="sheet">
+    <div class="container-wide intro">
+      <p>This is where I keep things I've built, the occasional piece of writing, and a few toys.</p>
+      <ul class="links">
+        <li><a href={SITE.links.github} rel="me" style="--c: var(--c-violet)">GitHub ↗</a></li>
+        {SITE.links.linkedin && <li><a href={SITE.links.linkedin} rel="me" style="--c: var(--c-cyan)">LinkedIn ↗</a></li>}
+        <li><a href="/about/" style="--c: var(--c-amber)">More about me →</a></li>
+      </ul>
+    </div>
 
-  <HomeGrid />
+    <HomeGrid />
+  </div>
 </Base>
 
 <style>
+  /* The rest of the page is a sheet of paper that slides up over the ocean. */
+  .sheet {
+    position: relative;
+    z-index: 1;
+    margin-top: -1.75rem;
+    border-radius: 1.75rem 1.75rem 0 0;
+    background: var(--bg);
+    box-shadow: 0 -18px 50px -20px rgb(0 0 0 / 0.6);
+  }
+
   .intro {
     display: flex;
     flex-wrap: wrap;

@@ -2,118 +2,139 @@
 import { SITE } from '../site.config';
 ---
 
-<section class="hero container-wide" aria-labelledby="hero-title">
-  <div class="frame" data-exposure-frame>
-    <canvas
-      data-exposure
-      role="img"
-      aria-label="A night scene: cyclists' lights streak past in a long exposure. Move your pointer over it to paint with light."
-    ></canvas>
-    <div class="scrim" aria-hidden="true"></div>
-    <div class="copy">
-      <h1 id="hero-title">Hi, I'm Andre.</h1>
-      <p>
-        {SITE.role} at <a href={SITE.company.url}>{SITE.company.name}</a>.
-      </p>
-    </div>
-    <p class="hint" data-hint aria-hidden="true">
-      <span class="hint-mouse">Move your cursor to paint with light</span>
-      <span class="hint-touch">Drag sideways to paint with light</span>
-    </p>
+<!-- A full-bleed ASCII ocean behind the top of the home page. On scroll, the water
+     moves at half speed and the greeting at three-quarter speed, so the page below
+     slides up over them. -->
+<section class="ocean" aria-labelledby="hero-title" data-ocean-section>
+  <div class="water" data-ocean-water>
+    <canvas data-ocean aria-hidden="true"></canvas>
   </div>
-  <div class="exif mono">
-    <span>ƒ/8</span>
-    <span>ISO 100</span>
-    <span><span data-exposure-time>0.0</span>s</span>
-    <span class="exif-actions">
-      <button type="button" data-exposure-reset>New exposure</button>
-      <button type="button" data-exposure-save>Save photo</button>
-    </span>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="copy container-wide" data-ocean-copy>
+    <h1 id="hero-title">Hi, I'm Andre.</h1>
+    <p class="role">
+      {SITE.role} at <a href={SITE.company.url}>{SITE.company.name}</a>.
+    </p>
+    <p class="caption mono">
+      <span class="hint-mouse">Fish scatter from your cursor. Click to splash.</span>
+      <span class="hint-touch">Tap the water to splash.</span>
+      <a href="https://github.com/stackedlol/ascii-sharks" rel="noopener">ascii-sharks ↗</a>
+    </p>
   </div>
 </section>
 
 <script>
-  import { createExposure } from '../scripts/long-exposure';
+  import { OceanEngine, type SharkSpec } from '../vendor/ascii-sharks';
 
-  const frame = document.querySelector<HTMLElement>('[data-exposure-frame]');
-  const canvas = document.querySelector<HTMLCanvasElement>('[data-exposure]');
-  if (frame && canvas) {
-    const time = document.querySelector<HTMLElement>('[data-exposure-time]')!;
-    const hint = document.querySelector<HTMLElement>('[data-hint]')!;
-    let shown = '';
-    const exposure = createExposure(canvas, {
-      ambient: true,
-      background: '#070914',
-      pointerTarget: frame,
-      onTick(seconds) {
-        const next = seconds.toFixed(1);
-        if (next !== shown) time.textContent = shown = next;
-      },
-      onFirstPaint() {
-        hint.classList.add('done');
-      },
-    });
-    document.querySelector('[data-exposure-reset]')?.addEventListener('click', () => {
-      exposure.reset();
-      time.textContent = shown = '0.0';
-    });
-    document.querySelector('[data-exposure-save]')?.addEventListener('click', () => exposure.save('andre-chen-long-exposure.png'));
+  const section = document.querySelector<HTMLElement>('[data-ocean-section]');
+  const water = document.querySelector<HTMLElement>('[data-ocean-water]');
+  const copy = document.querySelector<HTMLElement>('[data-ocean-copy]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-ocean]');
+
+  if (section && water && copy && canvas) {
+    // Fewer sharks on narrow screens, so the schools of fish still have room.
+    const narrow = canvas.getBoundingClientRect().width < 640;
+    const sharks: SharkSpec[] = narrow
+      ? [
+          { kind: 'hammerhead', size: 1 },
+          { kind: 'mako', size: 0.8 },
+        ]
+      : [
+          { kind: 'hammerhead', size: 1 },
+          { kind: 'thresher', size: 0.9 },
+          { kind: 'mako', size: 0.8 },
+          { kind: 'tiger', size: 0.72 },
+        ];
+    new OceanEngine(canvas, sharks);
+
+    // Parallax. Skipped for visitors who prefer reduced motion.
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const height = section.offsetHeight;
+      const y = reduced.matches ? 0 : Math.min(Math.max(window.scrollY, 0), height);
+      water.style.transform = `translate3d(0, ${(y * 0.5).toFixed(1)}px, 0)`;
+      copy.style.transform = `translate3d(0, ${(y * 0.25).toFixed(1)}px, 0)`;
+      copy.style.opacity = String(Math.max(0, 1 - y / (height * 0.55)));
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    reduced.addEventListener('change', onScroll);
+    update();
   }
 </script>
 
 <style>
-  .hero {
-    padding-top: clamp(0.5rem, 2vw, 1.5rem);
-  }
-
-  .frame {
+  .ocean {
     position: relative;
-    height: clamp(24rem, 62vh, 36rem);
-    border-radius: var(--radius);
+    height: 100svh;
+    min-height: 30rem;
     overflow: hidden;
-    background: var(--night);
-    box-shadow: var(--frame-shadow), 0 0 0 1px var(--frame-ring);
-    isolation: isolate;
-    /* Horizontal drags paint; vertical ones still scroll the page on touch screens. */
-    touch-action: pan-y pinch-zoom;
+    background: #000;
+    color: #f4f2ee;
     cursor: crosshair;
   }
 
+  .water,
   .scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgb(12 8 20 / 0.7), rgb(12 8 20 / 0) 42%);
-    pointer-events: none;
   }
 
+  .water {
+    will-change: transform;
+  }
+
+  /* The ASCII glyphs are drawn in the canvas's own font, so it has to be monospace. */
   canvas {
-    position: absolute;
-    inset: 0;
+    display: block;
     width: 100%;
     height: 100%;
+    font-family: var(--font-mono), ui-monospace, Menlo, monospace;
+  }
+
+  /* Darkens the top for the header and the bottom for the greeting. */
+  .scrim {
+    background:
+      linear-gradient(to bottom, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0) 9rem),
+      linear-gradient(to top, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0) 50%);
+    pointer-events: none;
   }
 
   .copy {
     position: absolute;
-    left: clamp(1.25rem, 4vw, 3rem);
-    bottom: clamp(1.25rem, 4vw, 2.75rem);
-    right: 1.25rem;
-    color: #f4f2ee;
+    inset: auto 0 clamp(3.5rem, 9vh, 6rem);
     pointer-events: none;
-    text-shadow: 0 1px 12px rgb(0 0 0 / 0.5);
+    text-shadow: 0 1px 14px rgb(0 0 0 / 0.8);
+    will-change: transform, opacity;
   }
 
   h1 {
     margin: 0;
-    font-size: clamp(2.5rem, 1.5rem + 5vw, 4.75rem);
+    font-size: clamp(2.75rem, 1.5rem + 6vw, 5.5rem);
     letter-spacing: -0.035em;
     line-height: 1;
   }
 
-  .copy p {
-    margin: 0.75rem 0 0;
+  .role {
+    margin: 0.9rem 0 0;
     font-size: var(--step-1);
-    color: rgb(244 242 238 / 0.72);
+    color: rgb(244 242 238 / 0.78);
+  }
+
+  .caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 1.4rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(244 242 238 / 0.5);
   }
 
   .copy a {
@@ -122,24 +143,14 @@ import { SITE } from '../site.config';
     text-decoration-color: rgb(255 255 255 / 0.35);
   }
 
+  .caption a {
+    color: rgb(244 242 238 / 0.7);
+    text-decoration: none;
+  }
+
   .copy a:hover {
     color: #fff;
     text-decoration-color: var(--accent);
-  }
-
-  .hint {
-    position: absolute;
-    top: 1.1rem;
-    right: 1.25rem;
-    margin: 0;
-    font-size: var(--step--1);
-    color: rgb(244 242 238 / 0.5);
-    pointer-events: none;
-    transition: opacity 1.2s var(--ease-out);
-  }
-
-  .hint.done {
-    opacity: 0;
   }
 
   .hint-touch {
@@ -156,34 +167,16 @@ import { SITE } from '../site.config';
     }
   }
 
-  .exif {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.25rem 1.25rem;
-    padding: 0.75rem 0.25rem 0;
-    font-size: 0.75rem;
-    color: var(--fg-faint);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .exif-actions {
-    display: flex;
-    gap: 1rem;
-    margin-left: auto;
-  }
-
-  .exif button {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--fg-muted);
-    font-size: inherit;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .exif button:hover {
-    color: var(--accent);
+  /* The site header sits on top of the water on this page, in light text. */
+  :global(body:has(.ocean) .site-header) {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+    --fg: #f4f2ee;
+    --fg-muted: rgb(244 242 238 / 0.72);
+    --accent-soft: rgb(255 255 255 / 0.12);
+    --bg-raised: rgb(255 255 255 / 0.08);
+    --border-strong: rgb(255 255 255 / 0.28);
+    color: var(--fg);
   }
 </style>
