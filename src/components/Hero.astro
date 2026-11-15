@@ -1,15 +1,24 @@
 ---
 import { SITE } from '../site.config';
+
+/** Lights up word by word in the second scene. */
+const STATEMENT = "This is where I keep things I've built, the occasional piece of writing, and a few toys.";
+const words = STATEMENT.split(' ');
 ---
 
-<!-- A full-bleed ASCII ocean behind the top of the home page. On scroll, the water
-     moves at half speed and the greeting at three-quarter speed, so the page below
-     slides up over them. -->
+<!-- The top of the home page: a full-screen ASCII ocean that stays pinned while the page
+     scrolls, with the scroll position driving three scenes:
+       1. the greeting, which shrinks and fades as you start to scroll;
+       2. a statement that lights up word by word;
+       3. the rest of the page (the sheet in index.astro) sliding up over the water,
+          widening from a card to the full width.
+     Throughout, the water zooms in and dims and a depth readout counts up. -->
 <section class="ocean" aria-labelledby="hero-title" data-ocean-section>
   <div class="water" data-ocean-water>
     <canvas data-ocean aria-hidden="true"></canvas>
   </div>
   <div class="scrim" aria-hidden="true"></div>
+
   <div class="copy container-wide" data-ocean-copy>
     <h1 id="hero-title">Hi, I'm Andre.</h1>
     <p class="role">
@@ -21,6 +30,16 @@ import { SITE } from '../site.config';
       <a href="https://github.com/stackedlol/ascii-sharks" rel="noopener">ascii-sharks ↗</a>
     </p>
   </div>
+
+  <p class="statement container-wide" data-ocean-statement>
+    {words.map((word) => <span class="word">{word} </span>)}
+  </p>
+
+  <p class="depth mono" data-ocean-depth aria-hidden="true">
+    <span class="depth-label">Depth</span>
+    <span class="depth-value"><span data-ocean-depth-value>000</span> m</span>
+    <span class="depth-cue">Scroll to dive ↓</span>
+  </p>
 </section>
 
 <script>
@@ -30,10 +49,14 @@ import { SITE } from '../site.config';
   const water = document.querySelector<HTMLElement>('[data-ocean-water]');
   const copy = document.querySelector<HTMLElement>('[data-ocean-copy]');
   const canvas = document.querySelector<HTMLCanvasElement>('[data-ocean]');
+  const statement = document.querySelector<HTMLElement>('[data-ocean-statement]');
+  const depth = document.querySelector<HTMLElement>('[data-ocean-depth]');
+  const depthValue = document.querySelector<HTMLElement>('[data-ocean-depth-value]');
+  const sheet = document.querySelector<HTMLElement>('[data-ocean-sheet]');
 
-  if (section && water && copy && canvas) {
+  if (section && water && copy && canvas && statement && sheet) {
     // Fewer sharks on narrow screens, so the schools of fish still have room.
-    const narrow = canvas.getBoundingClientRect().width < 640;
+    const narrow = canvas.clientWidth < 640;
     const sharks: SharkSpec[] = narrow
       ? [
           { kind: 'hammerhead', size: 1 },
@@ -47,16 +70,71 @@ import { SITE } from '../site.config';
         ];
     new OceanEngine(canvas, sharks);
 
-    // Parallax. Skipped for visitors who prefer reduced motion.
+    const words = [...statement.querySelectorAll<HTMLElement>('.word')];
+    const MAX_DEPTH = 200;
+    const DIM = 0.16;
+    const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+    /** 0 before `from`, 1 after `to`, linear in between. */
+    const span = (v: number, from: number, to: number) => clamp01((v - from) / (to - from));
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let queued = false;
+    let shownDepth = '';
+
     const update = () => {
       queued = false;
-      const height = section.offsetHeight;
-      const y = reduced.matches ? 0 : Math.min(Math.max(window.scrollY, 0), height);
-      water.style.transform = `translate3d(0, ${(y * 0.5).toFixed(1)}px, 0)`;
-      copy.style.transform = `translate3d(0, ${(y * 0.25).toFixed(1)}px, 0)`;
-      copy.style.opacity = String(Math.max(0, 1 - y / (height * 0.55)));
+      // Everything below is in units of one screen height (h).
+      const h = section.offsetHeight;
+      const scrolled = Math.max(window.scrollY, 0);
+      // The sheet's top edge meets the bottom of the screen at `enter` and the top at `cover`.
+      const cover = (sheet.getBoundingClientRect().top + window.scrollY) / h;
+      const enter = cover - 1;
+      // Once the sheet covers the water completely, hide the canvas so the simulation pauses.
+      canvas.style.display = scrolled >= cover * h ? 'none' : '';
+
+      if (reduced.matches) {
+        // No scroll-driven motion: everything stays put and readable.
+        water.style.transform = copy.style.transform = statement.style.transform = '';
+        water.style.opacity = copy.style.opacity = statement.style.opacity = '';
+        for (const word of words) word.style.opacity = '';
+        sheet.style.setProperty('--open', '1');
+        return;
+      }
+
+      const y = Math.min(scrolled, cover * h);
+      const s = y / h;
+      const whole = s / cover;
+
+      // Water: drifts up slowly, zooming in and getting darker the deeper you go.
+      water.style.transform = `translate3d(0, ${(-y * 0.05).toFixed(1)}px, 0) scale(${(1 + whole * 0.32).toFixed(4)})`;
+      water.style.opacity = (1 - whole * 0.5).toFixed(3);
+
+      // Scene 1: the greeting rises a little faster than the water, shrinking and fading.
+      const leave = span(s, 0, 0.45);
+      copy.style.transform = `translate3d(0, ${(-y * 0.35).toFixed(1)}px, 0) scale(${(1 - leave * 0.12).toFixed(4)})`;
+      copy.style.opacity = (1 - leave).toFixed(3);
+      copy.style.visibility = leave >= 1 ? 'hidden' : '';
+
+      // Scene 2: the statement settles into place, then lights up one word at a time.
+      const arrive = easeOut(span(s, 0.3, 0.6));
+      const depart = span(s, enter + 0.1, enter + 0.55);
+      const lift = (1 - arrive) * 0.08 * h - Math.max(0, s - enter) * 0.45 * h;
+      statement.style.transform = `translate3d(0, ${lift.toFixed(1)}px, 0)`;
+      statement.style.opacity = (arrive * (1 - depart)).toFixed(3);
+      const lit = span(s, 0.5, enter - 0.05) * words.length;
+      words.forEach((word, i) => {
+        word.style.opacity = (DIM + (1 - DIM) * clamp01(lit - i)).toFixed(3);
+      });
+
+      // Scene 3: the sheet opens from a rounded card to the full width as it comes up.
+      sheet.style.setProperty('--open', easeInOut(span(s, enter + 0.05, enter + 0.95)).toFixed(4));
+
+      if (depth && depthValue) {
+        depth.classList.toggle('diving', y > 8);
+        const next = String(Math.round(whole * MAX_DEPTH)).padStart(3, '0');
+        if (next !== shownDepth) depthValue.textContent = shownDepth = next;
+      }
     };
     const onScroll = () => {
       if (queued) return;
@@ -72,7 +150,8 @@ import { SITE } from '../site.config';
 
 <style>
   .ocean {
-    position: relative;
+    position: sticky;
+    top: 0;
     height: 100svh;
     min-height: 30rem;
     overflow: hidden;
@@ -88,7 +167,7 @@ import { SITE } from '../site.config';
   }
 
   .water {
-    will-change: transform;
+    will-change: transform, opacity;
   }
 
   /* The ASCII glyphs are drawn in the canvas's own font, so it has to be monospace. */
@@ -112,7 +191,74 @@ import { SITE } from '../site.config';
     inset: auto 0 clamp(3.5rem, 9vh, 6rem);
     pointer-events: none;
     text-shadow: 0 1px 14px rgb(0 0 0 / 0.8);
+    transform-origin: left bottom;
     will-change: transform, opacity;
+  }
+
+  .depth {
+    position: absolute;
+    top: clamp(5.5rem, 14vh, 8rem);
+    right: var(--gutter);
+    display: grid;
+    justify-items: end;
+    gap: 0.15rem;
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(244 242 238 / 0.5);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .depth-value {
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: rgb(244 242 238 / 0.85);
+  }
+
+  .depth-cue {
+    margin-top: 0.35rem;
+    transition: opacity 0.4s;
+  }
+
+  .depth.diving .depth-cue {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .depth {
+      display: none;
+    }
+  }
+
+  .statement {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    margin: auto;
+    font-size: clamp(1.75rem, 1rem + 3.6vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    text-shadow: 0 1px 18px rgb(0 0 0 / 0.9);
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .word {
+    white-space: pre;
+  }
+
+  /* Without scroll-driven motion the statement would sit on top of the greeting, so the
+     sheet carries it instead (see index.astro). */
+  @media (prefers-reduced-motion: reduce) {
+    .statement {
+      display: none;
+    }
   }
 
   h1 {

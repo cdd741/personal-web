@@ -63,11 +63,14 @@ export class OceanEngine {
   }
 
   private resize() {
-    const rect = this.canvas.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) return;
+    // Local change: layout size, not the bounding rect, so a CSS transform on the canvas
+    // (the hero zooms it on scroll) doesn't change the simulation's size.
+    const width = this.canvas.clientWidth;
+    const height = this.canvas.clientHeight;
+    if (width < 1 || height < 1) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.renderer.resize(rect.width, rect.height, dpr);
-    this.world.resize(rect.width, rect.height, this.renderer.cellWidth, this.renderer.cellHeight);
+    this.renderer.resize(width, height, dpr);
+    this.world.resize(width, height, this.renderer.cellWidth, this.renderer.cellHeight);
     if (this.reducedMotion.matches) this.drawStill();
   }
 
@@ -111,10 +114,12 @@ export class OceanEngine {
   };
 
   private toLocal(e: PointerEvent) {
+    // Local change: map through any CSS scale on the canvas back to layout pixels.
     const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const inside = x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
+    if (rect.width < 1 || rect.height < 1) return { x: 0, y: 0, inside: false };
+    const x = ((e.clientX - rect.left) / rect.width) * this.canvas.clientWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * this.canvas.clientHeight;
+    const inside = x >= 0 && y >= 0 && x <= this.canvas.clientWidth && y <= this.canvas.clientHeight;
     return { x, y, inside };
   }
 
