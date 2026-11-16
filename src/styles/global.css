@@ -252,7 +252,8 @@ button {
   margin: 0 0 1rem;
 }
 
-/* A short light trail under page titles: the pedal-light wave from the hero. */
+/* A short wave under page titles. The path swings 4 units either side of the middle of
+   its 12-unit box, so neither the crests nor the troughs are clipped. */
 .trail-rule,
 .page-head h1::after {
   content: '';
@@ -261,8 +262,8 @@ button {
   height: 12px;
   margin-top: 0.7rem;
   background: var(--trail);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M2 3Q9 11 16 3T30 3T44 3T58 3T72 3T86 3T100 3T114 3' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M2 3Q9 11 16 3T30 3T44 3T58 3T72 3T86 3T100 3T114 3' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M3 6Q10 14 17 6T31 6T45 6T59 6T73 6T87 6T101 6T115 6' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12'%3E%3Cpath d='M3 6Q10 14 17 6T31 6T45 6T59 6T73 6T87 6T101 6T115 6' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat left center / contain;
 }
 
 .page-head p {

@@ -4,6 +4,8 @@
  * shape sampled on the ocean's character grid, each cell a shaded block with a glyph),
  * on their own canvas above the sharks.
  *
+ * This canvas also shows the bait a click drops, from the click until a shark gets to it.
+ *
  * Each animal is a little signed-distance shape in its own frame, so it animates
  * smoothly: the jellyfish's bell pulses and the anglerfish's tail wags. They keep clear of whatever text the page is showing, and fade out if they
  * end up over it anyway.
@@ -29,6 +31,8 @@ export interface CreatureFrame {
   pointer: { x: number; y: number; active: boolean };
   /** The ocean's character cell, so the animals sit on the same grid as the sharks. */
   cell: { cw: number; ch: number };
+  /** Bait the visitor has dropped and no shark has reached yet; `left` is the seconds until it dissolves. */
+  bait: { x: number; y: number; left: number } | null;
 }
 
 export interface Creatures {
@@ -464,6 +468,45 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     ctx.globalAlpha = 1;
   };
 
+  /**
+   * The bait: a warm chunk that glows a little and sheds crumbs, so it is easy to find
+   * and to watch the sharks race for. It fades as it dissolves.
+   */
+  const drawBait = (bait: { x: number; y: number; left: number }) => {
+    const alpha = clamp(bait.left / 1.2, 0, 1);
+    const col = Math.floor(bait.x / cw);
+    const row = Math.floor(bait.y / ch);
+    const mx = (col + 0.5) * cw;
+    const my = (row + 0.5) * ch;
+
+    const radius = cw * (3.4 + 0.5 * Math.sin(time * 5));
+    const glow = ctx.createRadialGradient(mx, my, 0, mx, my, radius);
+    glow.addColorStop(0, `rgba(255,150,110,${(0.45 * alpha).toFixed(3)})`);
+    glow.addColorStop(1, 'rgba(255,150,110,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(mx - radius, my - radius, radius * 2, radius * 2);
+
+    ctx.globalAlpha = alpha;
+    // Two cells of chum, side by side.
+    for (let i = 0; i < 2; i++) {
+      const left = (col + i) * cw;
+      const top = row * ch;
+      ctx.fillStyle = i ? 'rgb(226,112,92)' : 'rgb(255,158,122)';
+      ctx.fillRect(left + 1, top + 1, cw - 1, ch - 1);
+      ctx.fillStyle = i ? 'rgb(246,170,150)' : 'rgb(255,214,194)';
+      ctx.fillText(i ? '%' : '@', left + cw / 2, top + ch / 2 + 1);
+    }
+    // Crumbs sink away from it, one after another.
+    ctx.fillStyle = 'rgb(255,186,160)';
+    for (let i = 0; i < 4; i++) {
+      const fall = (time * 0.7 + i * 0.27) % 1;
+      ctx.globalAlpha = alpha * (1 - fall) * 0.9;
+      const dx = (i - 1.5) * cw * 0.9 + Math.sin(time * 2 + i * 1.7) * 3;
+      ctx.fillText(SOFT_GLYPHS[(i * 3 + 2) % SOFT_GLYPHS.length], mx + cw / 2 + dx, my + ch * (0.9 + fall * 2.2));
+    }
+    ctx.globalAlpha = 1;
+  };
+
   return {
     resize,
     clear() {
@@ -484,6 +527,7 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
         move(c, f);
         draw(c);
       }
+      if (f.bait) drawBait(f.bait);
     },
   };
 }

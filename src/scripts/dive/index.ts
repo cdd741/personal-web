@@ -454,7 +454,8 @@ export function startDive(root: HTMLElement) {
         textZone = zone;
       }
     }
-    creatures?.step({ dt, current, depth: clamp01(window.scrollY / maxScroll), zone: textZone, pointer: world.pointer, cell: engine.cell });
+    const bait = world.bait && { x: world.bait.x, y: world.bait.y, left: world.bait.until - world.time };
+    creatures?.step({ dt, current, depth: clamp01(window.scrollY / maxScroll), zone: textZone, pointer: world.pointer, cell: engine.cell, bait });
   };
 
   const sync = () => {
