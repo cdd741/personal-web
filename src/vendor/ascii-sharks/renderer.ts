@@ -23,13 +23,12 @@ const DOT_RGB: [number, number, number][] = [
 const DOT_BASE_ALPHA = [1, 1, 1, 1, 1];
 const WAKE = DOT_RGB.length - 1;
 
-const ACCENTS = ["#e0892c", "#e03a32", "#b44ae0", "#33c8cc", "#3cb54a", "#3150e8", "#d9c14a"];
 
 // Sparse glyphs on bright skin, dense glyphs in shadow, so the texture
 // reinforces the shading instead of fighting it.
 const SKIN_RAMP = ":;t%SX8#@";
-/** Local change: how dark a skin glyph is against its cell (0 = black, 1 = invisible). */
-const SKIN_INK = 0.62;
+/** Local change: how much lighter a skin glyph is than its cell (0 = invisible, 1 = white). */
+const SKIN_INK = 0.2;
 const FIN_GLYPHS = "%;tS:";
 const RIDGE_GLYPHS = "@8%";
 const EDGE_HEAVY = ":;";
@@ -779,10 +778,8 @@ export class AsciiRenderer {
         // Soft, anti-aliased silhouette: no block, just a light glyph.
         const set = shade >= 0.5 ? EDGE_HEAVY : EDGE_LIGHT;
         const g = (70 + shade * 80) * dim;
-        ctx.fillStyle =
-          roll < 0.07
-            ? ACCENTS[key % ACCENTS.length]
-            : `rgb(${Math.round(g * tr)},${Math.round(g * tg)},${Math.min(255, Math.round(g * tb + 6))})`;
+        // Local change: no accent-coloured glyphs (upstream coloured about 1 in 14).
+        ctx.fillStyle = `rgb(${Math.round(g * tr)},${Math.round(g * tg)},${Math.min(255, Math.round(g * tb + 6))})`;
         ctx.fillText(set[(key >>> 8) % set.length], x + cw / 2, y + ch / 2 + 1);
         continue;
       }
@@ -814,13 +811,13 @@ export class AsciiRenderer {
       let color: string;
       if (flag === FLAG_EYE) color = "#9aa0ad";
       else if (flag === FLAG_MARK) color = `rgb(${Math.round(70 * tr)},${Math.round(70 * tg)},${Math.round(70 * tb)})`;
-      else if (roll < 0.09) color = ACCENTS[key % ACCENTS.length];
-      else if (roll < 0.13) color = "#ffffff";
       else {
-        // Local change: the glyph is a darker shade of its own cell instead of near-black,
-        // so the hide reads as texture and the letters don't jump out of the water.
-        const ink = level * SKIN_INK;
-        color = `rgb(${Math.round(ink * tr)},${Math.round(ink * tg)},${Math.round(ink * tb + 4)})`;
+        // Local change: the glyph is a slightly lighter shade of its own cell instead of
+        // near-black, so the hide reads as texture and the letters don't jump out of the
+        // water. Now and then one glints brighter. Upstream also coloured about 1 in 11
+        // glyphs with a random accent; that is gone.
+        const ink = level + (255 - level) * (roll < 0.06 ? SKIN_INK * 1.7 : SKIN_INK);
+        color = `rgb(${Math.min(255, Math.round(ink * tr))},${Math.min(255, Math.round(ink * tg))},${Math.min(255, Math.round(ink * tb + 4))})`;
       }
       ctx.fillStyle = color;
       ctx.fillText(glyph, x + cw / 2, y + ch / 2 + 1);

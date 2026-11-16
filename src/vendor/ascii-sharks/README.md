@@ -12,8 +12,9 @@ Changes from upstream, each marked "Local change" in the code:
   - The web-font preload ignores a rejected promise (a missing local fallback font).
 - **renderer.ts**
   - The canvas is transparent instead of black, so the page colours the water behind it.
-  - Skin glyphs are a darker shade of their own cell (`SKIN_INK`) instead of near-black, so
-    the letters don't jump out of the water.
+  - Skin glyphs are a slightly lighter shade of their own cell (`SKIN_INK`) instead of
+    near-black, and the random accent-coloured glyphs are gone, so the letters read as
+    texture and don't jump out of the water.
 - **world.ts**
   - `drift`: a current that carries fish (and nudges sharks). Fish carried out of the
     top or bottom re-enter from the other side.
