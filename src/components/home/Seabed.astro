@@ -1,8 +1,8 @@
 ---
 /**
  * The bottom of the dive, and the home page's footer: links, a way back up, an ASCII
- * sea floor with swaying kelp (drawn by scripts/dive/seabed), and a treasure chest that
- * opens the command palette.
+ * sea floor with swaying kelp and a crab that scuttles about (both run by
+ * scripts/dive/seabed), and a treasure chest that opens the command palette.
  */
 import { RESUME_PDF } from '../../resume';
 import { SITE } from '../../site.config';
@@ -31,6 +31,7 @@ const CHEST = ['  _______', ' /      /|', '+------+ |', '|  [#] | +', '+------+/
     <button type="button" class="chest mono" data-seabed-chest aria-label="Open the treasure chest (the command menu)">
       <pre aria-hidden="true" set:text={CHEST} />
     </button>
+    <pre class="crab mono" aria-hidden="true" data-seabed-crab></pre>
     <pre class="kelp mono" aria-hidden="true" data-seabed-kelp></pre>
     <pre class="sand mono" aria-hidden="true" data-seabed-sand></pre>
   </div>
@@ -92,6 +93,17 @@ const CHEST = ['  _______', ' /      /|', '+------+ |', '|  [#] | +', '+------+/
     position: absolute;
     inset: auto 0 0;
     color: color-mix(in oklab, var(--c-green) 80%, transparent);
+  }
+
+  /* Walks along the top of the sand; the script moves it with `translate`. */
+  .crab {
+    position: absolute;
+    left: 0;
+    bottom: 3.45em;
+    /* In front of the kelp. */
+    z-index: 1;
+    color: rgb(238 124 96 / 0.9);
+    will-change: translate;
   }
 
   .chest {
