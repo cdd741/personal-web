@@ -67,7 +67,6 @@ const NONE = 0;
 const BODY = 1;
 /** A glyph with no block behind it: tentacles, soft edges, the anglerfish's rod. */
 const SOFT = 2;
-const EYE = 3;
 const LURE = 4;
 const TEETH = 5;
 
@@ -225,10 +224,6 @@ function sampleAngler(c: Creature, x: number, y: number, cw: number, ch: number)
       }
       return;
     }
-  }
-  if (Math.abs(x - 0.13 * L) <= cw * 0.5 && Math.abs(y + 0.11 * L) <= ch * 0.5) {
-    hit = EYE;
-    return;
   }
   if (body < -cw * 0.15) {
     const r = Math.hypot(x / (0.34 * L), y / (0.26 * L));
@@ -485,11 +480,6 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
           ctx.fillRect(left + 1, top + 1, cw - 1, ch - 1);
           ctx.fillStyle = '#fff';
           ctx.fillText('*', mx, my);
-        } else if (hit === EYE) {
-          ctx.fillStyle = 'rgb(236,228,190)';
-          ctx.fillRect(left + 1, top + 1, cw - 1, ch - 1);
-          ctx.fillStyle = '#10131a';
-          ctx.fillText('o', mx, my);
         } else if (hit === TEETH) {
           ctx.fillStyle = 'rgba(236,240,248,0.85)';
           ctx.fillText(shade > 0.5 ? 'v' : '^', mx, my);
