@@ -258,8 +258,15 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
       tip.style.top = `${below ? box.bottom + 8 : box.top - 8}px`;
     }
 
-    // Keep the tooltip on its cell while the page or the heatmap scrolls.
-    const follow = () => active && !tip.hidden && place(active);
+    // Keep the tooltip on its cell while the page or the heatmap scrolls, and drop it once
+    // the chart is no longer there to point at (scrolled away, or faded out by the home page).
+    const follow = () => {
+      if (!active || tip.hidden) return;
+      const box = svg.getBoundingClientRect();
+      const gone = box.bottom < 0 || box.top > window.innerHeight || !svg.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      if (gone) show(null);
+      else place(active);
+    };
     window.addEventListener('scroll', follow, { passive: true });
     scroller.addEventListener('scroll', follow, { passive: true });
 
@@ -480,6 +487,12 @@ const summary = `${plural(total, 'contribution')} on GitHub in the last year, on
     white-space: nowrap;
     pointer-events: none;
     transform: translate(-50%, -100%);
+  }
+
+  /* `display: grid` above would otherwise override the hidden attribute, and the tooltip
+     would stay on screen for good after its first showing. */
+  .tip[hidden] {
+    display: none;
   }
 
   .tip[data-side='below'] {
