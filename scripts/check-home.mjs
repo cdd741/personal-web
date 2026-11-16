@@ -3,7 +3,8 @@
 //   1. two scenes show content in the same place at the same time, or
 //   2. a pinned scene's content spills outside the screen, or
 //   3. opening a <details> in a scene (the heatmap's monthly totals) makes the scene
-//      shrink: a pinned scene has one screen, so what opens must open in place.
+//      shrink: a pinned scene has one screen, so what opens must open in place, or
+//   4. the heatmap's tooltip stays on screen after the pointer or the page has moved on.
 // The first two happen when a scene's content outgrows one screen or the scene timings drift.
 // Uses Playwright's Chromium; set CHROMIUM_PATH to use another binary.
 import { createServer } from 'node:http';
@@ -124,6 +125,39 @@ try {
         problems.push(`"${scene.name}" shrinks to ${Math.round(scene.fit * 100)}% (from ${Math.round(before[i].fit * 100)}%) when its details open`);
       }
     }
+    // 4. Point at a day in the heatmap, then leave: once by moving the pointer off the chart,
+    // once by scrolling away with the pointer still. The tooltip has to go both times.
+    const tipShown = () =>
+      page.evaluate(() => {
+        const tip = document.querySelector('[data-tip]');
+        const box = tip?.getBoundingClientRect();
+        return !!box && box.width > 0 && box.bottom > 0 && box.top < innerHeight;
+      });
+    const chart = page.locator('[data-heatmap]');
+    if (await chart.count()) {
+      for (const summary of await page.locator('[data-scene] details[open] > summary').all()) await summary.dispatchEvent('click');
+      const pointAtDay = async () => {
+        await chart.scrollIntoViewIfNeeded();
+        const scene = await page.evaluate(() => {
+          const el = document.querySelector('[data-heatmap]').closest('[data-scene]');
+          return el.getBoundingClientRect().top + scrollY;
+        });
+        await page.evaluate((to) => scrollTo(0, to), scene + height * 0.35);
+        await page.waitForTimeout(300);
+        const day = await page.locator('[data-heatmap] .cell').last().boundingBox();
+        await page.mouse.move(day.x + day.width / 2, day.y + day.height / 2);
+        await page.waitForTimeout(100);
+        return tipShown();
+      };
+      if (!(await pointAtDay())) problems.push('the heatmap tooltip does not show when pointing at a day');
+      await page.mouse.move(4, 4);
+      await page.waitForTimeout(100);
+      if (await tipShown()) problems.push('the heatmap tooltip stays after the pointer leaves the chart');
+      await pointAtDay();
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.waitForTimeout(300);
+      if (await tipShown()) problems.push('the heatmap tooltip stays after scrolling away from the chart');
+    }
     console.log(`${width}x${height}: ${problems.length ? `${problems.length} problem(s)` : 'ok'}`);
     for (const line of problems.slice(0, 5)) console.log(`  ${line}`);
     failures += problems.length;
@@ -135,7 +169,7 @@ try {
 }
 
 if (failures) {
-  console.error('Home page scenes overlap, overflow or shrink. See src/scripts/dive/index.ts (scene timings) and Scene.astro (fit).');
+  console.error('Home page check failed. See src/scripts/dive/index.ts (scene timings) and Scene.astro (fit).');
   process.exitCode = 1;
 } else {
   console.log('Home page scenes: no overlap, nothing off screen.');
