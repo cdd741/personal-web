@@ -76,9 +76,11 @@ const SOFT_GLYPHS = ["'", '`', '.', ',', ':', ';'];
 /** How much lighter a glyph is than its cell; matches SKIN_INK in the vendored renderer. */
 const INK = 0.2;
 
-const LOOK: Record<Kind, { tint: [number, number, number]; tone: number; alpha: number }> = {
+type Tint = [number, number, number];
+const LOOK: Record<Kind, { tint: Tint; second?: Tint; tone: number; alpha: number }> = {
   jelly: { tint: [1.12, 0.8, 1.14], tone: 1, alpha: 0.8 },
-  turtle: { tint: [0.7, 1, 0.76], tone: 0.92, alpha: 1 },
+  // An olive-brown shell and green skin.
+  turtle: { tint: [1.02, 0.9, 0.52], second: [0.66, 1, 0.74], tone: 0.95, alpha: 1 },
   angler: { tint: [0.84, 0.76, 0.96], tone: 0.62, alpha: 1 },
 };
 
@@ -91,6 +93,11 @@ let hit = NONE;
 let shade = 0;
 /** For a SOFT cell: the glyph to draw, or '' to pick a random light one. */
 let mark = '';
+/** 0 for the animal's main colour, 1 for its second one (the turtle's skin, against its shell). */
+let part = 0;
+/** Which way the light comes from, in the frame of the animal being drawn. */
+let lightX = 0;
+let lightY = -1;
 
 /** Distance to an ellipse's edge (negative inside); approximate, which is plenty at this resolution. */
 function ellipse(x: number, y: number, a: number, b: number) {
@@ -113,6 +120,7 @@ function sampleJelly(c: Creature, x: number, y: number, cw: number) {
   const b = s * (0.95 + 0.2 * squeeze);
   hit = NONE;
   mark = '';
+  part = 0;
   if (y <= 0) {
     const d = ellipse(x, y, a, b);
     if (d < -cw * 0.3) {
@@ -161,35 +169,60 @@ function sampleJelly(c: Creature, x: number, y: number, cw: number) {
   }
 }
 
-/** A sea turtle seen from above, swimming along +x: shell, head, and four flippers. */
+/** A sea turtle seen from above, swimming along +x: a domed shell with plates, head, and four flippers. */
 function sampleTurtle(c: Creature, x: number, y: number, cw: number) {
   const L = c.size;
   const stroke = Math.sin(c.phase);
   const side = Math.abs(y);
   hit = NONE;
   mark = '';
+  part = 0;
 
-  let best = ellipse(x, y, 0.3 * L, 0.22 * L);
-  const r = Math.hypot(x / (0.3 * L), y / (0.22 * L));
-  // Scutes: a soft checker across the shell, with a darker rim.
-  shade = r > 0.8 ? 0.26 : 0.5 + 0.2 * Math.cos((x / L) * 24) * Math.cos((y / L) * 28) - 0.15 * r;
+  // The shell is a dome: brightest where it faces the light, falling off to a dark rim,
+  // with dark seams between the plates (a row down the spine, a row along each flank).
+  const a = 0.32 * L;
+  const b = 0.26 * L;
+  const shell = ellipse(x, y, a, b);
+  let best = shell;
+  const nx = x / a;
+  const ny = y / b;
+  const r = Math.hypot(nx, ny);
+  const seamAlong = Math.abs(side - 0.36 * b) < cw * 0.42;
+  const offset = side < 0.36 * b ? 0 : 0.5;
+  const plate = (x / (0.145 * L) + offset + 20) % 1;
+  const seamAcross = Math.min(plate, 1 - plate) * 0.145 * L < cw * 0.42;
+  shade = 0.56 + 0.3 * (nx * lightX + ny * lightY) - 0.2 * r * r;
+  if (r > 0.86) shade = 0.2 + 0.12 * (nx * lightX + ny * lightY);
+  else if (seamAlong || seamAcross) shade -= 0.27;
+  shade = clamp(shade, 0, 1);
 
+  let skin = false;
+  // The shell lies over the roots of the head and flippers.
   const consider = (d: number, s: number) => {
-    if (d < best) {
+    if (shell > -cw * 0.15 && d < best) {
       best = d;
       shade = s;
+      skin = true;
     }
   };
-  consider(capsule(x, y, 0.27 * L, 0, 0.42 * L, 0, 0.05 * L, 0.07 * L), 0.7);
-  // Front flippers sweep back and forth; rear ones just steer.
-  consider(capsule(x, side, 0.16 * L, 0.16 * L, (0.04 - 0.16 * stroke) * L, (0.5 - 0.04 * Math.abs(stroke)) * L, 0.085 * L, 0.04 * L), 0.62);
-  consider(capsule(x, side, -0.22 * L, 0.13 * L, (-0.38 - 0.02 * stroke) * L, 0.25 * L, 0.055 * L, 0.03 * L), 0.52);
-  consider(capsule(x, y, -0.28 * L, 0, -0.37 * L, 0, 0.02 * L, 0.008 * L), 0.45);
+  // Mottled skin: a stable speckle from where the cell sits on the animal.
+  const fleck = Math.sin(Math.round(x / cw) * 12.9898 + Math.round(y / cw) * 78.233) * 43758.5453;
+  const mottle = (fleck - Math.floor(fleck) - 0.5) * 0.22;
+  consider(capsule(x, y, 0.29 * L, 0, 0.45 * L, 0, 0.05 * L, 0.072 * L), 0.78 + mottle - (x > 0.42 * L ? 0 : 0.12));
+  // Front flippers sweep back and forth, paler towards the tips; rear ones just steer.
+  consider(
+    capsule(x, side, 0.17 * L, 0.19 * L, (0.04 - 0.16 * stroke) * L, (0.54 - 0.04 * Math.abs(stroke)) * L, 0.085 * L, 0.04 * L),
+    0.5 + 0.3 * span(side, 0.19 * L, 0.52 * L) + mottle,
+  );
+  consider(capsule(x, side, -0.23 * L, 0.16 * L, (-0.4 - 0.02 * stroke) * L, 0.29 * L, 0.055 * L, 0.03 * L), 0.5 + mottle);
+  consider(capsule(x, y, -0.3 * L, 0, -0.39 * L, 0, 0.02 * L, 0.008 * L), 0.5);
 
+  if (skin) part = 1;
   if (best < -cw * 0.15) hit = BODY;
   else if (best < cw * 0.45) {
     hit = SOFT;
     shade = 0.6;
+    part = 1;
   }
 }
 
@@ -205,6 +238,7 @@ function sampleAngler(c: Creature, x: number, y: number, cw: number, ch: number)
   const wag = Math.sin(c.phase);
   hit = NONE;
   mark = '';
+  part = 0;
 
   const [lx, ly] = lureAt(c);
   if (Math.abs(x - lx) < cw * 0.5 && Math.abs(y - ly) < ch * 0.5) {
@@ -288,7 +322,7 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     id,
     x: 0,
     y: 0,
-    cells: kind === 'jelly' ? rand(4.2, 5.8) : kind === 'turtle' ? 21 : 18,
+    cells: kind === 'jelly' ? rand(4.2, 5.8) : kind === 'turtle' ? 24 : 18,
     size: 0,
     reach: 0,
     angle: 0,
@@ -432,10 +466,12 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     const look = LOOK[c.kind];
     const alpha = look.alpha * c.presence * c.clearOfText;
     if (alpha < 0.02 || c.wait > 0) return;
-    const [tr, tg, tb] = look.tint;
     const mirror = c.kind === 'angler' && c.dir < 0 ? -1 : 1;
     const cos = Math.cos(c.angle);
     const sin = Math.sin(c.angle);
+    // Light from the top left of the screen, turned into the animal's frame.
+    lightX = -0.5 * cos - 0.8 * sin;
+    lightY = 0.5 * sin - 0.8 * cos;
 
     // The lure lights the water around it.
     if (c.kind === 'angler') {
@@ -467,6 +503,7 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
         else if (c.kind === 'turtle') sampleTurtle(c, x, y, cw);
         else sampleAngler(c, x, y, cw, ch);
         if (hit === NONE) continue;
+        const [tr, tg, tb] = part && look.second ? look.second : look.tint;
 
         const left = col * cw;
         const top = row * ch;
