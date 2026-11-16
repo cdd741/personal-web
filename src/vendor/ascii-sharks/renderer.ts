@@ -40,6 +40,8 @@ const FLAG_EDGE = 2;
 const FLAG_FIN = 3;
 const FLAG_RIDGE = 4;
 const FLAG_EYE = 5;
+/** Local change: no eyes. Upstream draws each as a black cell with an "o", which stares out of the water. */
+const SHOW_EYES = false;
 /** Dark skin markings: tiger bars, zebra-shark spots. */
 const FLAG_MARK = 6;
 const MARK_GLYPHS = "#%@";
@@ -559,7 +561,7 @@ export class AsciiRenderer {
       // Full depth almost to the tips, so the wing reads as a solid bar rather than a thin line.
       const depth = L * head.depth * (1 - 0.2 * r * r * r * r);
       if (r <= 1 && u >= front && u <= front + depth) {
-        this.hitFlag = r > 0.84 ? FLAG_EYE : FLAG_BODY;
+        this.hitFlag = SHOW_EYES && r > 0.84 ? FLAG_EYE : FLAG_BODY;
         this.hitShade = r > 0.84 ? 0 : 0.62 - 0.2 * r + (u < front + L * 0.012 ? 0.1 : 0);
         return true;
       }
@@ -577,7 +579,7 @@ export class AsciiRenderer {
         shade = 1;
       } else if (s > shape.secondDorsal[0] && s < shape.secondDorsal[1] && across < 0.4) {
         shade = Math.max(shade, 0.82);
-      } else if (shape.eye && s > shape.eye[0] && s < shape.eye[1] && across > 0.6) {
+      } else if (SHOW_EYES && shape.eye && s > shape.eye[0] && s < shape.eye[1] && across > 0.6) {
         flag = FLAG_EYE;
         shade = 0;
       } else if (s > shape.gills[0] && s < shape.gills[1] && across > 0.58) {

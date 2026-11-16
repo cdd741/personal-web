@@ -15,6 +15,7 @@ Changes from upstream, each marked "Local change" in the code:
   - Skin glyphs are a slightly lighter shade of their own cell (`SKIN_INK`) instead of
     near-black, and the random accent-coloured glyphs are gone, so the letters read as
     texture and don't jump out of the water.
+  - No eyes (`SHOW_EYES`): upstream draws each as a black cell with an "o".
 - **world.ts**
   - `drift`: a current that carries fish (and nudges sharks). Fish carried out of the
     top or bottom re-enter from the other side.
