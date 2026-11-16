@@ -1,5 +1,5 @@
 /**
- * The other animals in the home page's water: jellyfish in mid-water, a sea turtle near
+ * The other animals in the home page's water, all seen from the side: jellyfish in mid-water, a sea turtle near
  * the surface and an anglerfish in the deep. They are drawn the way the sharks are (a
  * shape sampled on the ocean's character grid, each cell a shaded block with a glyph),
  * on their own canvas above the sharks.
@@ -48,9 +48,11 @@ interface Creature {
   size: number;
   /** Radius, in px, of the box worth sampling around it. */
   reach: number;
-  /** Heading (turtle), or tilt (jellyfish, anglerfish). */
+  /** How far it is drawn turned from level. */
   angle: number;
-  /** Anglerfish only: 1 faces right, -1 left. */
+  /** Turtle only: how steeply this crossing climbs (negative) or dives. */
+  pitch: number;
+  /** Turtle and anglerfish: 1 faces right, -1 left. */
   dir: number;
   phase: number;
   rate: number;
@@ -77,10 +79,10 @@ const SOFT_GLYPHS = ["'", '`', '.', ',', ':', ';'];
 const INK = 0.2;
 
 type Tint = [number, number, number];
-const LOOK: Record<Kind, { tint: Tint; second?: Tint; tone: number; alpha: number }> = {
+const LOOK: Record<Kind, { tint: Tint; second?: Tint; third?: Tint; tone: number; alpha: number }> = {
   jelly: { tint: [1.12, 0.8, 1.14], tone: 1, alpha: 0.8 },
-  // An olive-brown shell and green skin.
-  turtle: { tint: [1.02, 0.9, 0.52], second: [0.66, 1, 0.74], tone: 0.95, alpha: 1 },
+  // An olive-brown shell, green skin and a sandy belly.
+  turtle: { tint: [1.02, 0.9, 0.52], second: [0.66, 1, 0.74], third: [1.08, 1, 0.72], tone: 0.95, alpha: 1 },
   angler: { tint: [0.84, 0.76, 0.96], tone: 0.62, alpha: 1 },
 };
 
@@ -93,7 +95,7 @@ let hit = NONE;
 let shade = 0;
 /** For a SOFT cell: the glyph to draw, or '' to pick a random light one. */
 let mark = '';
-/** 0 for the animal's main colour, 1 for its second one (the turtle's skin, against its shell). */
+/** 0 for the animal's main colour; 1 and 2 for its others (the turtle's skin and belly, against its shell). */
 let part = 0;
 /** Which way the light comes from, in the frame of the animal being drawn. */
 let lightX = 0;
@@ -169,55 +171,64 @@ function sampleJelly(c: Creature, x: number, y: number, cw: number) {
   }
 }
 
-/** A sea turtle seen from above, swimming along +x: a domed shell with plates, head, and four flippers. */
+/** A sea turtle from the side, facing +x: a domed shell over a pale belly, head, and paddling flippers. `y` is down. */
 function sampleTurtle(c: Creature, x: number, y: number, cw: number) {
   const L = c.size;
   const stroke = Math.sin(c.phase);
-  const side = Math.abs(y);
   hit = NONE;
   mark = '';
   part = 0;
 
-  // The shell is a dome: brightest where it faces the light, falling off to a dark rim,
-  // with dark seams between the plates (a row down the spine, a row along each flank).
-  const a = 0.32 * L;
-  const b = 0.26 * L;
-  const shell = ellipse(x, y, a, b);
-  let best = shell;
-  const nx = x / a;
-  const ny = y / b;
+  // The carapace: the top half of an ellipse, lit from above, with seams between its
+  // plates and a dark band of small plates along the bottom edge.
+  const a = 0.31 * L;
+  const b = 0.3 * L;
+  const base = 0.05 * L;
+  const nx = (x + 0.02 * L) / a;
+  const ny = (y - base) / b;
   const r = Math.hypot(nx, ny);
-  const seamAlong = Math.abs(side - 0.36 * b) < cw * 0.42;
-  const offset = side < 0.36 * b ? 0 : 0.5;
-  const plate = (x / (0.145 * L) + offset + 20) % 1;
-  const seamAcross = Math.min(plate, 1 - plate) * 0.145 * L < cw * 0.42;
-  shade = 0.56 + 0.3 * (nx * lightX + ny * lightY) - 0.2 * r * r;
-  if (r > 0.86) shade = 0.2 + 0.12 * (nx * lightX + ny * lightY);
-  else if (seamAlong || seamAcross) shade -= 0.27;
-  shade = clamp(shade, 0, 1);
+  const dome = y <= base ? (r - 1) * b : Math.max(y - base, (Math.abs(nx) - 1) * a);
+  // The plastron: a flat, pale slab under it.
+  const belly = Math.max(Math.abs(x + 0.02 * L) - 0.27 * L, Math.abs(y - base - 0.035 * L) - 0.035 * L);
 
-  let skin = false;
-  // The shell lies over the roots of the head and flippers.
-  const consider = (d: number, s: number) => {
-    if (shell > -cw * 0.15 && d < best) {
-      best = d;
-      shade = s;
-      skin = true;
-    }
-  };
+  let best = Math.min(dome, belly);
+  if (belly < dome) {
+    shade = 0.82 - 0.1 * span(y, base, base + 0.07 * L);
+    part = 2;
+  } else {
+    const plate = (nx * 2.4 + (r < 0.6 ? 0 : 0.5) + 20) % 1;
+    const seam = Math.abs(r - 0.6) * b < cw * 0.4 || Math.min(plate, 1 - plate) * (a / 2.4) < cw * 0.4;
+    shade = 0.5 + 0.34 * (nx * lightX + ny * lightY) + 0.12 * (1 - r);
+    if (ny > -0.2) shade = 0.26;
+    else if (seam) shade -= 0.26;
+    shade = clamp(shade, 0, 1);
+  }
+
   // Mottled skin: a stable speckle from where the cell sits on the animal.
   const fleck = Math.sin(Math.round(x / cw) * 12.9898 + Math.round(y / cw) * 78.233) * 43758.5453;
-  const mottle = (fleck - Math.floor(fleck) - 0.5) * 0.22;
-  consider(capsule(x, y, 0.29 * L, 0, 0.45 * L, 0, 0.05 * L, 0.072 * L), 0.78 + mottle - (x > 0.42 * L ? 0 : 0.12));
-  // Front flippers sweep back and forth, paler towards the tips; rear ones just steer.
+  const mottle = (fleck - Math.floor(fleck) - 0.5) * 0.2;
+  // The shell lies over the roots of the neck and flippers.
+  const covered = best < -cw * 0.15;
+  const consider = (d: number, s: number) => {
+    if (!covered && d < best) {
+      best = d;
+      shade = s;
+      part = 1;
+    }
+  };
+  // Neck and head, reaching forward and a little up.
+  consider(capsule(x, y, 0.24 * L, 0.03 * L, 0.38 * L, -0.02 * L, 0.055 * L, 0.05 * L), 0.6 + mottle);
+  consider(ellipse(x - 0.42 * L, y + 0.03 * L, 0.095 * L, 0.07 * L), 0.76 + mottle);
+  // The front flipper is a long paddle that sweeps down and back; the rear one just steers.
+  const reach = 0.36 * L;
+  const swing = 1.05 + 0.6 * stroke;
   consider(
-    capsule(x, side, 0.17 * L, 0.19 * L, (0.04 - 0.16 * stroke) * L, (0.54 - 0.04 * Math.abs(stroke)) * L, 0.085 * L, 0.04 * L),
-    0.5 + 0.3 * span(side, 0.19 * L, 0.52 * L) + mottle,
+    capsule(x, y, 0.15 * L, 0.09 * L, 0.15 * L - Math.cos(swing) * reach * 0.55, 0.09 * L + Math.sin(swing) * reach, 0.09 * L, 0.045 * L),
+    0.48 + 0.3 * span(y, 0.09 * L, 0.09 * L + reach) + mottle,
   );
-  consider(capsule(x, side, -0.23 * L, 0.16 * L, (-0.4 - 0.02 * stroke) * L, 0.29 * L, 0.055 * L, 0.03 * L), 0.5 + mottle);
-  consider(capsule(x, y, -0.3 * L, 0, -0.39 * L, 0, 0.02 * L, 0.008 * L), 0.5);
+  consider(capsule(x, y, -0.23 * L, 0.09 * L, (-0.39 - 0.02 * stroke) * L, (0.2 + 0.03 * stroke) * L, 0.055 * L, 0.028 * L), 0.5 + mottle);
+  consider(capsule(x, y, -0.3 * L, 0.07 * L, -0.39 * L, 0.09 * L, 0.02 * L, 0.008 * L), 0.5);
 
-  if (skin) part = 1;
   if (best < -cw * 0.15) hit = BODY;
   else if (best < cw * 0.45) {
     hit = SOFT;
@@ -322,10 +333,11 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     id,
     x: 0,
     y: 0,
-    cells: kind === 'jelly' ? rand(4.2, 5.8) : kind === 'turtle' ? 24 : 18,
+    cells: kind === 'jelly' ? rand(4.2, 5.8) : kind === 'turtle' ? 22 : 18,
     size: 0,
     reach: 0,
     angle: 0,
+    pitch: 0,
     dir: Math.random() < 0.5 ? 1 : -1,
     phase: rand(0, 6.28),
     rate: kind === 'jelly' ? rand(2.1, 2.8) : kind === 'turtle' ? 2.3 : 3.1,
@@ -352,7 +364,8 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     c.dir = fromLeft ? 1 : -1;
     c.x = fromLeft ? -c.reach : width + c.reach;
     c.y = pick(height, zone?.y, zone?.ry ?? 0, c.reach * 0.6);
-    c.angle = c.kind === 'turtle' ? (fromLeft ? 0 : Math.PI) + rand(-0.15, 0.15) : 0;
+    c.pitch = c.kind === 'turtle' ? rand(-0.12, 0.12) : 0;
+    c.angle = 0;
   };
 
   const populate = () => {
@@ -428,9 +441,11 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
       }
     } else {
       const speed = c.kind === 'turtle' ? 22 + 14 * thrust : 11 + 5 * thrust;
-      const heading = c.kind === 'turtle' ? c.angle + Math.sin(time * 0.25 + c.seed) * 0.12 : c.dir > 0 ? 0 : Math.PI;
-      c.x += Math.cos(heading) * speed * dt;
-      c.y += Math.sin(heading) * speed * dt + (c.kind === 'angler' ? Math.sin(time * 0.4 + c.seed) * 4 * dt : 0);
+      // The turtle noses up and down a little as it goes, and is drawn tilted to match.
+      const climb = c.kind === 'turtle' ? c.pitch + Math.sin(time * 0.25 + c.seed) * 0.1 : 0;
+      c.angle = c.dir * climb;
+      c.x += c.dir * Math.cos(climb) * speed * dt;
+      c.y += Math.sin(climb) * speed * dt + (c.kind === 'angler' ? Math.sin(time * 0.4 + c.seed) * 4 * dt : 0);
       if (c.x < -c.reach * 1.2 || c.x > width + c.reach * 1.2) c.wait = rand(5, 13);
     }
 
@@ -466,11 +481,11 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
     const look = LOOK[c.kind];
     const alpha = look.alpha * c.presence * c.clearOfText;
     if (alpha < 0.02 || c.wait > 0) return;
-    const mirror = c.kind === 'angler' && c.dir < 0 ? -1 : 1;
+    const mirror = c.kind !== 'jelly' && c.dir < 0 ? -1 : 1;
     const cos = Math.cos(c.angle);
     const sin = Math.sin(c.angle);
     // Light from the top left of the screen, turned into the animal's frame.
-    lightX = -0.5 * cos - 0.8 * sin;
+    lightX = (-0.5 * cos - 0.8 * sin) * mirror;
     lightY = 0.5 * sin - 0.8 * cos;
 
     // The lure lights the water around it.
@@ -503,7 +518,7 @@ export function createCreatures(canvas: HTMLCanvasElement): Creatures {
         else if (c.kind === 'turtle') sampleTurtle(c, x, y, cw);
         else sampleAngler(c, x, y, cw, ch);
         if (hit === NONE) continue;
-        const [tr, tg, tb] = part && look.second ? look.second : look.tint;
+        const [tr, tg, tb] = (part === 1 ? look.second : part === 2 ? look.third : null) ?? look.tint;
 
         const left = col * cw;
         const top = row * ch;
