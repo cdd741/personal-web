@@ -12,6 +12,7 @@
  */
 import { OceanEngine, type SharkKind, type SharkSpec } from '../../vendor/ascii-sharks';
 import { createBubbles } from './bubbles';
+import { createCreatures, type Zone } from './creatures';
 import { mountSeabed } from './seabed';
 
 // ---------- small helpers ----------
@@ -55,6 +56,8 @@ interface Scene {
   sharks: SharkKind[];
   fish: number;
   focus: HTMLElement | null;
+  /** Text the sharks may cross but the slower animals should stay off (the greeting). */
+  avoid: HTMLElement | null;
   /** `u` is in screens: -1 as the scene enters from below, 0 when it pins, `hold` when it lets go. */
   render: (u: number, scene: Scene) => void;
   reset: () => void;
@@ -255,6 +258,7 @@ export function startDive(root: HTMLElement) {
   const backdrop = $(document, '[data-dive-backdrop]');
   const oceanCanvas = document.querySelector<HTMLCanvasElement>('[data-dive-ocean]');
   const bubbleCanvas = document.querySelector<HTMLCanvasElement>('[data-dive-bubbles]');
+  const creatureCanvas = document.querySelector<HTMLCanvasElement>('[data-dive-creatures]');
   if (!backdrop || !oceanCanvas || !bubbleCanvas) return;
 
   const rays = $(document, '[data-dive-rays]');
@@ -275,12 +279,16 @@ export function startDive(root: HTMLElement) {
     sharks: (el.dataset.sharks ?? '').split(',').filter(Boolean).slice(0, narrow ? 1 : undefined) as SharkKind[],
     fish: Number(el.dataset.fish ?? 1),
     focus: $(el, '[data-focus]'),
+    avoid: $(el, '[data-avoid]'),
     ...buildScene(el),
   }));
 
   const engine = new OceanEngine(oceanCanvas, ROSTER);
   const world = engine.world;
   const bubbles = createBubbles(bubbleCanvas);
+  const creatures = creatureCanvas ? createCreatures(creatureCanvas) : null;
+  const textRange = document.createRange();
+  const zone: Zone = { x: 0, y: 0, rx: 0, ry: 0 };
   const floor = $(root, '[data-seabed-floor]');
   if (floor) mountSeabed(floor);
 
@@ -327,6 +335,7 @@ export function startDive(root: HTMLElement) {
     if (rays) rays.style.opacity = (1 - span(whole, 0, 0.3)).toFixed(3);
     // The sharks and fish dim once there is more to read on top of them, and come back at the seabed.
     oceanCanvas.style.opacity = (1 - 0.45 * span(whole, 0.12, 0.35) + 0.3 * span(whole, 0.9, 1)).toFixed(3);
+    if (creatureCanvas) creatureCanvas.style.opacity = oceanCanvas.style.opacity;
 
     if (depth && depthValue) {
       depth.classList.toggle('diving', y > 8);
@@ -424,12 +433,35 @@ export function startDive(root: HTMLElement) {
     world.clear = clear;
 
     bubbles.step(dt, current);
+
+    // The other animals stay off the scene's text too. Where the sharks have no zone (the
+    // greeting), they still avoid the words themselves.
+    let textZone: Zone | null = null;
+    if (strength > 0) {
+      zone.x = focus.x;
+      zone.y = focus.y;
+      zone.rx = clear.rx;
+      zone.ry = clear.ry;
+      textZone = zone;
+    } else if (active?.avoid) {
+      textRange.selectNodeContents(active.avoid);
+      const words = textRange.getBoundingClientRect();
+      if (words.width > 0 && words.bottom > 0 && words.top < H) {
+        zone.x = words.left + words.width / 2;
+        zone.y = words.top + words.height / 2;
+        zone.rx = words.width / 2 + 40;
+        zone.ry = words.height / 2 + 40;
+        textZone = zone;
+      }
+    }
+    creatures?.step({ dt, current, depth: clamp01(window.scrollY / maxScroll), zone: textZone, pointer: world.pointer, cell: engine.cell });
   };
 
   const sync = () => {
     cancelAnimationFrame(raf);
     world.drift.y = 0;
     if (reduced.matches) {
+      creatures?.clear();
       for (const scene of scenes) scene.reset();
     } else if (!document.hidden) {
       previousTime = performance.now();
@@ -451,6 +483,7 @@ export function startDive(root: HTMLElement) {
   const onResize = () => {
     measure();
     bubbles.resize();
+    creatures?.resize();
     for (const scene of scenes) if (!scene.pinned && scene.name !== 'seabed') scene.reset();
     renderScroll();
   };

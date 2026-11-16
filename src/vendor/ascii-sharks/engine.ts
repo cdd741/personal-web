@@ -63,6 +63,11 @@ export class OceanEngine {
     window.removeEventListener("blur", this.onPointerLeave);
   }
 
+  /** Local change: the character cell, so the page can draw on the same grid. */
+  get cell() {
+    return { cw: this.renderer.cellWidth, ch: this.renderer.cellHeight };
+  }
+
   private resize() {
     // Local change: layout size, not the bounding rect, so a CSS transform on the canvas
     // (the hero zooms it on scroll) doesn't change the simulation's size.

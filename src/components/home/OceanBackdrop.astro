@@ -1,7 +1,7 @@
 ---
 /**
  * The water behind the whole home page: a colour that deepens as you scroll, light
- * rays near the surface, the ASCII sharks and fish, and rising bubbles. scripts/dive
+ * rays near the surface, the ASCII sharks and fish, the other animals, and rising bubbles. scripts/dive
  * runs all of it. Also the depth readout, and the page-level rules that only apply
  * on the home page.
  */
@@ -10,6 +10,7 @@
 <div class="backdrop" aria-hidden="true" data-dive-backdrop>
   <div class="rays" data-dive-rays></div>
   <canvas class="layer ocean" data-dive-ocean></canvas>
+  <canvas class="layer ocean" data-dive-creatures></canvas>
   <canvas class="layer" data-dive-bubbles></canvas>
 </div>
 
